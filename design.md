@@ -63,7 +63,7 @@ request: TODO
 
 #### CreateUser
 
-path: /users
+path: /sign-up
 
 method: POST
 
