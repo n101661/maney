@@ -3,8 +3,8 @@
 - [技術分析](#技術分析)
   - [後端](#後端)
     - [API](#api)
-      - [SignIn](#signin)
-      - [SignOut](#signout)
+      - [LogIn](#login)
+      - [LogOut](#logout)
       - [CreateUser](#createuser)
       - [UpdateUserConfiguration](#updateuserconfiguration)
       - [CreateAccount](#createaccount)
@@ -45,17 +45,24 @@
 
 ### API
 
-#### SignIn
+#### LogIn
 
-path: /sign-in
+path: /log-in
 
 method: POST
 
-request: TODO
+request:
 
-#### SignOut
+```json
+{
+   "id": "",
+   "password": ""
+}
+```
 
-path: /sign-out
+#### LogOut
+
+path: /log-out
 
 method: POST
 

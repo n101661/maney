@@ -1,0 +1,219 @@
+openapi: 3.0.0
+info:
+  title: 記帳(TODO)
+  version: v0.0.1
+tags:
+  - name: User
+  - name: Account
+  - name: Category
+  - name: Shop
+  - name: Fee
+  - name: Repeating Item
+  - name: Item
+paths:
+  /log-in:
+    post:
+      summary: user logs in
+      tags: ["User"]
+      operationId: LogIn
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                password:
+                  type: string
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /log-out:
+    post:
+      summary: user logs out
+      tags: ["User"]
+      operationId: LogOut
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /sign-up:
+    post:
+      summary: user signs up
+      tags: ["User"]
+      operationId: SignUp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                password:
+                  type: string
+              required:
+                - id
+                - password
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/config:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      summary: update user config
+      tags: ["User"]
+      operationId: UpdateUserConfig
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                compare_items_in_different_shop:
+                  type: boolean
+                compare_items_in_same_shop:
+                  type: boolean
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/accounts:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: create an account for user
+      tags: ["Account"]
+      operationId: CreateAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Account"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/accounts/{account-id}:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: account-id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      summary: update account
+      tags: ["Account"]
+      operationId: UpdateAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Account"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+    delete:
+      summary: delete account
+      tags: ["Account"]
+      operationId: DeleteAccount
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/categories:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: create category
+      tags: ["Category"]
+      operationId: CreateCategory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Category"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/categories/{category-id}:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: category-id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      summary: update category
+      tags: ["Category"]
+      operationId: UpdateCategory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Category"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+    delete:
+      summary: delete category
+      tags: ["Category"]
+      operationId: DeleteCategory
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        name:
+          type: string
+          description: account name
+        icon:
+          type: integer
+          description: icon id
+        initial_balance:
+          type: number
+      required:
+        - name
+    CategoryType:
+      type: string
+      enum: ["expense", "income"]
+    Category:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/CategoryType"
+        name:
+          type: string
+        icon:
+          type: integer
+          description: icon id
+      required:
+        - type
+        - name
+  responses:
+    DefaultResponse:
+      description: TODO
