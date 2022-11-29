@@ -182,7 +182,100 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-
+  /{user-id}/shops:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: ["Shop"]
+      operationId: CreateShop
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Shop"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/shops/{shop-id}:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: shop-id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: ["Shop"]
+      operationId: UpdateShop
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Shop"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+    delete:
+      tags: ["Shop"]
+      operationId: DeleteShop
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/fees:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: ["Fee"]
+      operationId: CreateFee
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Fee"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/fees/{fee-id}:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: fee-id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: ["Fee"]
+      operationId: UpdateFee
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Fee"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+    delete:
+      tags: ["Fee"]
+      operationId: DeleteFee
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
 components:
   schemas:
     Account:
@@ -214,6 +307,28 @@ components:
       required:
         - type
         - name
+    Shop:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+      required:
+        - name
+    Fee:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: object
+          description: choose one of properties
+          properties:
+            rate:
+              type: number
+            fixed:
+              type: number
   responses:
     DefaultResponse:
       description: TODO
