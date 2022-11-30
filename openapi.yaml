@@ -8,8 +8,8 @@ tags:
   - name: Category
   - name: Shop
   - name: Fee
-  - name: Repeating Item
   - name: Item
+  - name: Repeating Item
 paths:
   /log-in:
     post:
@@ -276,6 +276,119 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/items:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: ["Item"]
+      operationId: CreateDailyItem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DailyItem"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+    get:
+      tags: ["Item"]
+      operationId: ListDailyItems
+      parameters:
+        - name: date
+          in: query
+          description: today is in default
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyItem"
+  /{user-id}/items/{item-id}:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: item-id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: ["Item"]
+      operationId: UpdateDailyItem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DailyItem"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+    delete:
+      tags: ["Item"]
+      operationId: DeleteDailyItem
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/repeating-items:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: ["Repeating Item"]
+      operationId: CreateRepeatingItem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepeatingItem"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/repeating-items/{repeating-item-id}:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: repeating-item-id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: ["Repeating Item"]
+      operationId: UpdateRepeatingItem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepeatingItem"
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+    delete:
+      tags: ["Repeating Item"]
+      operationId: DeleteRepeatingItem
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
 components:
   schemas:
     Account:
@@ -329,6 +442,79 @@ components:
               type: number
             fixed:
               type: number
+    Item:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: array
+          items:
+            type: integer
+          minLength: 1
+        shop:
+          type: integer
+        quantity:
+          type: object
+          properties:
+            value:
+              type: number
+        fee:
+          type: integer
+        price:
+          type: number
+        memo:
+          type: string
+      required:
+        - name
+        - price
+    DailyItem:
+      allOf:
+        - type: object
+          properties:
+            date:
+              type: string
+              format: date
+          required:
+            - date
+        - $ref: "#/components/schemas/Item"
+    RepeatingItem:
+      type: object
+      properties:
+        item:
+          $ref: "#/components/schemas/Item"
+        valid:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date
+            end:
+              type: string
+              format: date
+        frequency:
+          type: object
+          properties:
+            durations:
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    type: integer
+                  unit:
+                    type: string
+                    enum:
+                      - ONE_DAY
+                      - ONE_MONTH
+                      - ONE_YEAR
+                      - EVERY_WORK_DAY
+                required:
+                  - value
+                  - unit
+      required:
+        - item
+        - frequency
   responses:
     DefaultResponse:
       description: TODO
