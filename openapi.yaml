@@ -73,15 +73,20 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                compare_items_in_different_shop:
-                  type: boolean
-                compare_items_in_same_shop:
-                  type: boolean
+              $ref: "#/components/schemas/UserConfig"
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
+    get:
+      tags: ["User"]
+      operationId: GetUserConfig
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserConfig"
   /{user-id}/accounts:
     parameters:
       - name: user-id
@@ -101,6 +106,19 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
+    get:
+      summary: list all user's accounts
+      tags: ["Account"]
+      operationId: ListUserAccounts
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Account"
   /{user-id}/accounts/{account-id}:
     parameters:
       - name: user-id
@@ -151,6 +169,24 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
+    get:
+      summary: list all user's categories
+      tags: ["Category"]
+      operationId: ListUserCategories
+      parameters:
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/CategoryType"
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
   /{user-id}/categories/{category-id}:
     parameters:
       - name: user-id
@@ -200,6 +236,19 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
+    get:
+      summary: list all user's shops
+      tags: ["Shop"]
+      operationId: ListUserShops
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shop"
   /{user-id}/shops/{shop-id}:
     parameters:
       - name: user-id
@@ -247,6 +296,19 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
+    get:
+      summary: list all user's fees
+      tags: ["Fee"]
+      operationId: ListUserFees
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Fee"
   /{user-id}/fees/{fee-id}:
     parameters:
       - name: user-id
@@ -296,7 +358,7 @@ paths:
           $ref: "#/components/responses/DefaultResponse"
     get:
       tags: ["Daily Item"]
-      operationId: ListDailyItems
+      operationId: ListUserDailyItems
       parameters:
         - name: date
           in: query
@@ -306,7 +368,7 @@ paths:
             format: date
       responses:
         200:
-          description: ""
+          description: success
           content:
             application/json:
               schema:
@@ -362,7 +424,7 @@ paths:
               - xml
       responses:
         200:
-          description: ""
+          description: success
           content:
             application/json:
               schema:
@@ -423,6 +485,19 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
+    get:
+      summary: list all user's repeating items
+      tags: ["Repeating Item"]
+      operationId: ListUserRepeatingItems
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RepeatingItem"
   /{user-id}/repeating-items/{repeating-item-id}:
     parameters:
       - name: user-id
@@ -454,6 +529,13 @@ paths:
           $ref: "#/components/responses/DefaultResponse"
 components:
   schemas:
+    UserConfig:
+      type: object
+      properties:
+        compare_items_in_different_shop:
+          type: boolean
+        compare_items_in_same_shop:
+          type: boolean
     Account:
       type: object
       properties:
