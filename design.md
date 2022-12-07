@@ -387,7 +387,7 @@ query parameters:
 
 #### ExportItems
 
-path: `/${user-id}/items/export?format=csv`
+path: `/${user-id}/items/export?format=xxx`
 
 method: GET
 
@@ -395,7 +395,7 @@ query parameters:
 
 | param | default | description |
 | --- | --- | --- |
-| format | csv | support `csv`, `json`, `xml` |
+| format | json | support `json`, `xml` |
 
 #### ImportItems
 
@@ -403,7 +403,7 @@ path: `/${user-id}/items/import`
 
 method: POST
 
-description: the upload file depends on header, it supports `csv`, `json`, `xml`.
+description: the upload file depends on header, it supports `json`, `xml`.
 
 ### 資料儲存
 

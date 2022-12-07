@@ -66,7 +66,7 @@
 
 ### 匯入匯出記帳內容
 
-json, xml, csv
+json, xml
 
 ## extra 功能
 

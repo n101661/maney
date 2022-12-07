@@ -8,7 +8,7 @@ tags:
   - name: Category
   - name: Shop
   - name: Fee
-  - name: Item
+  - name: Daily Item
   - name: Repeating Item
 paths:
   /log-in:
@@ -284,7 +284,7 @@ paths:
         schema:
           type: string
     post:
-      tags: ["Item"]
+      tags: ["Daily Item"]
       operationId: CreateDailyItem
       requestBody:
         content:
@@ -295,7 +295,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultResponse"
     get:
-      tags: ["Item"]
+      tags: ["Daily Item"]
       operationId: ListDailyItems
       parameters:
         - name: date
@@ -326,7 +326,7 @@ paths:
         schema:
           type: integer
     put:
-      tags: ["Item"]
+      tags: ["Daily Item"]
       operationId: UpdateDailyItem
       requestBody:
         content:
@@ -337,8 +337,71 @@ paths:
         default:
           $ref: "#/components/responses/DefaultResponse"
     delete:
-      tags: ["Item"]
+      tags: ["Daily Item"]
       operationId: DeleteDailyItem
+      responses:
+        default:
+          $ref: "#/components/responses/DefaultResponse"
+  /{user-id}/items/export:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: ["Daily Item"]
+      operationId: ExportDailyItems
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - json
+              - xml
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyItem"
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyItem"
+                xml:
+                  name: items
+                  wrapped: true
+  /{user-id}/items/import:
+    parameters:
+      - name: user-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: ["Daily Item"]
+      operationId: ImportDailyItems
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/DailyItem"
+          application/xml:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/DailyItem"
+              xml:
+                name: items
+                wrapped: true
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
@@ -451,7 +514,13 @@ components:
           type: array
           items:
             type: integer
+            xml:
+              name: category
           minLength: 1
+          xml:
+            name: categories
+            attribute: false
+            wrapped: true
         shop:
           type: integer
         quantity:
@@ -478,6 +547,8 @@ components:
           required:
             - date
         - $ref: "#/components/schemas/Item"
+      xml:
+        name: item
     RepeatingItem:
       type: object
       properties:
