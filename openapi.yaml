@@ -338,7 +338,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/items:
+  /{user-id}/daily-items:
     parameters:
       - name: user-id
         in: path
@@ -375,14 +375,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DailyItem"
-  /{user-id}/items/{item-id}:
+  /{user-id}/daily-items/{daily-item-id}:
     parameters:
       - name: user-id
         in: path
         required: true
         schema:
           type: string
-      - name: item-id
+      - name: daily-item-id
         in: path
         required: true
         schema:
@@ -404,7 +404,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/items/export:
+  /{user-id}/daily-items/export:
     parameters:
       - name: user-id
         in: path
@@ -439,7 +439,7 @@ paths:
                 xml:
                   name: items
                   wrapped: true
-  /{user-id}/items/import:
+  /{user-id}/daily-items/import:
     parameters:
       - name: user-id
         in: path
