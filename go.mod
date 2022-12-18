@@ -2,7 +2,10 @@ module github.com/n101661/maney
 
 go 1.19
 
-require github.com/kataras/iris/v12 v12.1.8
+require (
+	github.com/kataras/iris/v12 v12.1.8
+	github.com/shopspring/decimal v1.3.1
+)
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
