@@ -8,7 +8,7 @@ type User struct {
 	Password []byte
 }
 
-type UserAccount struct {
+type AssetAccount struct {
 	OID            uint64
 	Name           string
 	IconOID        uint64
@@ -16,31 +16,31 @@ type UserAccount struct {
 	Balance        decimal.Decimal
 }
 
-type UserCategory struct {
+type Category struct {
 	OID     uint64
 	Name    string
 	IconOID uint64
 }
 
-type UserShop struct {
+type Shop struct {
 	OID     uint64
 	Name    string
 	Address string
 }
 
-type UserFee struct {
+type Fee struct {
 	OID  uint64
 	Name string
 	// it is one of type:
-	//  - UserFeeValueRate
-	//  - UserFeeValueFixed
-	Value interface{ userFeeValue() }
+	//  - FeeValue_Rate
+	//  - FeeValue_Fixed
+	Value interface{ feeValue() }
 }
 
-type UserFeeValueRate decimal.Decimal
+type FeeValue_Rate decimal.Decimal
 
-func (UserFeeValueRate) userFeeValue() {}
+func (FeeValue_Rate) feeValue() {}
 
-type UserFeeValueFixed decimal.Decimal
+type FeeValue_Fixed decimal.Decimal
 
-func (UserFeeValueFixed) userFeeValue() {}
+func (FeeValue_Fixed) feeValue() {}
