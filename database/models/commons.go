@@ -2,6 +2,11 @@ package models
 
 import "github.com/shopspring/decimal"
 
+type Icon struct {
+	OID   uint64
+	Value []byte
+}
+
 type User struct {
 	OID      uint64
 	ID       string
