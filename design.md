@@ -3,7 +3,6 @@
 - [技術分析](#技術分析)
   - [後端](#後端)
     - [資料儲存](#資料儲存)
-      - [System Icon Object](#system-icon-object)
       - [Account Object](#account-object)
       - [Category Object](#category-object)
       - [Shop Object](#shop-object)
@@ -21,16 +20,7 @@
 
 boltDB, 分成以下 bucket:
 
-1. system
-   1. icons
-      1. account
-         1. [System Icon](#system-icon-object)
-      2. category
-         1. expense
-            1. [System Icon](#system-icon-object)
-         2. income
-            1. [System Icon](#system-icon-object)
-2. users
+1. users
    1. accounts
       1. [Account](#account-object)
    2. categories
@@ -56,12 +46,6 @@ boltDB, 分成以下 bucket:
    8. advance
       1. items
          1. [User Advance Item](#user-advance-item-object)
-
-#### System Icon Object
-
-key: ${sequence id}
-
-value: binary-file
 
 #### Account Object
 
