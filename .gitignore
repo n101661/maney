@@ -1,1 +1,4 @@
 .vscode
+
+# openapi models
+server/models/
