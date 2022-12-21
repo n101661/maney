@@ -5,7 +5,7 @@ import "github.com/n101661/maney/database/models"
 type UserService interface {
 	Create(models.User) error
 	Update(models.User) error
-	Get(oid uint64) (models.User, error)
+	Get(id string) (models.User, error)
 }
 
 type AccountService interface {

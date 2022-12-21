@@ -8,8 +8,8 @@ type Icon struct {
 }
 
 type User struct {
-	OID      uint64
 	ID       string
+	Name     string
 	Password []byte
 }
 
