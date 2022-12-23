@@ -2,15 +2,26 @@ package iris
 
 import (
 	"github.com/kataras/iris/v12"
+
+	"github.com/n101661/maney/database"
 )
 
-type Server struct {
-	app *iris.Application
+type Config struct {
+	// SecretKey is for JWS.
+	SecretKey string
 }
 
-func NewServer() *Server {
+type Server struct {
+	app  *iris.Application
+	auth *authentication
+
+	db database.DB
+}
+
+func NewServer(cfg Config) *Server {
 	s := &Server{
-		app: iris.Default(),
+		app:  iris.Default(),
+		auth: newAuthentication(cfg.SecretKey),
 	}
 
 	s.registerRoutes()
