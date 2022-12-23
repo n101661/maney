@@ -3,8 +3,8 @@ package iris
 func (s *Server) registerRoutes() {
 
 	s.app.Post("/log-in", s.LogIn)
-	s.app.Post("/log-out")
-	s.app.Post("/sign-up")
+	s.app.Post("/log-out", s.LogOut)
+	s.app.Post("/sign-up", s.SignUp)
 
 	user := s.app.Party("/{user-id:string}")
 
