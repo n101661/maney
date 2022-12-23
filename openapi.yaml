@@ -26,6 +26,9 @@ paths:
                   type: string
                 password:
                   type: string
+              required:
+                - id
+                - password
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
@@ -52,9 +55,12 @@ paths:
                   type: string
                 password:
                   type: string
+                name:
+                  type: string
               required:
                 - id
                 - password
+                - name
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
