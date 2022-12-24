@@ -9,6 +9,7 @@ import (
 
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
+	"github.com/n101661/maney/server/impl/iris/auth"
 	"github.com/n101661/maney/server/models"
 )
 
@@ -28,14 +29,14 @@ func (s *Server) LogIn(ctx iris.Context) {
 	}
 
 	if user == nil ||
-		s.auth.validatePassword(user.Password, []byte(r.Password)) != nil {
+		s.auth.ValidatePassword(user.Password, []byte(r.Password)) != nil {
 		ctx.StatusCode(iris.StatusUnauthorized)
 		return
 	}
 
 	tokenMaxAge := 8 * time.Hour
 
-	token, err := s.auth.generateToken(tokenClaims{
+	token, err := s.auth.GenerateToken(auth.TokenClaims{
 		UserID: user.ID,
 		Name:   user.Name,
 		Expiry: time.Now().Add(tokenMaxAge),
@@ -66,7 +67,7 @@ func (s *Server) SignUp(ctx iris.Context) {
 		return
 	}
 
-	pwd, err := s.auth.encryptPassword(r.Password)
+	pwd, err := s.auth.EncryptPassword(r.Password)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
@@ -100,7 +101,7 @@ func (s *Server) UpdateConfig(ctx iris.Context) {
 		return
 	}
 
-	tokenClaims := s.auth.getTokenClaims(ctx)
+	tokenClaims := s.auth.GetTokenClaims(ctx)
 
 	err := s.db.User().UpdateConfig(tokenClaims.UserID, dbModels.UserConfig{
 		CompareItemsInDifferentShop: r.CompareItemsInDifferentShop,
@@ -116,7 +117,7 @@ func (s *Server) UpdateConfig(ctx iris.Context) {
 }
 
 func (s *Server) GetConfig(ctx iris.Context) {
-	tokenClaims := s.auth.getTokenClaims(ctx)
+	tokenClaims := s.auth.GetTokenClaims(ctx)
 
 	cfg, err := s.db.User().GetConfig(tokenClaims.UserID)
 	if err != nil {

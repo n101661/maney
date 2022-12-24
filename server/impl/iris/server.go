@@ -4,6 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 
 	"github.com/n101661/maney/database"
+	"github.com/n101661/maney/server/impl/iris/auth"
 )
 
 type Config struct {
@@ -13,7 +14,7 @@ type Config struct {
 
 type Server struct {
 	app  *iris.Application
-	auth *authentication
+	auth *auth.Authentication
 
 	db database.DB
 }
@@ -21,7 +22,7 @@ type Server struct {
 func NewServer(cfg Config) *Server {
 	s := &Server{
 		app:  iris.Default(),
-		auth: newAuthentication(cfg.SecretKey),
+		auth: auth.NewAuthentication(cfg.SecretKey),
 		db:   nil, // TODO
 	}
 
