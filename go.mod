@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/contiamo/openapi-generator-go v0.18.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/iris-contrib/middleware/jwt v0.0.0-20221109225525-f806663b83a0
 	github.com/kataras/iris/v12 v12.2.0-beta6
 	github.com/shopspring/decimal v1.3.1
@@ -27,7 +28,6 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.5 // indirect
-	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect

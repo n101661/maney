@@ -1,12 +1,14 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 )
 
 type (
-	GenerateTokenFunc    func(claims TokenClaims) (token string, err error)
+	GenerateTokenFunc    func(claims TokenClaims, expiry time.Time) (token string, err error)
 	ValidateTokenFunc    = context.Handler
 	GetTokenClaimsFunc   func(iris.Context) TokenClaims
 	EncryptPasswordFunc  func(v string) ([]byte, error)

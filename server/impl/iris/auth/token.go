@@ -3,33 +3,33 @@ package auth
 import (
 	"time"
 
-	"github.com/iris-contrib/middleware/jwt"
+	"github.com/golang-jwt/jwt/v4"
+	irisJWT "github.com/iris-contrib/middleware/jwt"
 	"github.com/kataras/iris/v12"
 )
 
 var (
-	method = jwt.SigningMethodES512
+	method = irisJWT.SigningMethodES512
 )
 
 type TokenClaims struct {
 	UserID string
 	Name   string
-	Expiry time.Time
 }
 
 func newGenerateTokenFunc(secretKey string) GenerateTokenFunc {
-	return func(claims TokenClaims) (token string, err error) {
-		return jwt.NewTokenWithClaims(method, jwt.MapClaims(jwt.MapClaims{
+	return func(claims TokenClaims, expiry time.Time) (token string, err error) {
+		return irisJWT.NewTokenWithClaims(method, irisJWT.MapClaims(irisJWT.MapClaims{
 			"user_id": claims.UserID,
 			"name":    claims.Name,
-			"expiry":  claims.Expiry,
+			"exp":     jwt.NewNumericDate(expiry),
 		})).SignedString(secretKey)
 	}
 }
 
 func newValidateTokenFunc(secretKey string) ValidateTokenFunc {
-	return jwt.New(jwt.Config{
-		ValidationKeyGetter: func(*jwt.Token) (interface{}, error) {
+	return irisJWT.New(irisJWT.Config{
+		ValidationKeyGetter: func(*irisJWT.Token) (interface{}, error) {
 			return secretKey, nil
 		},
 		SigningMethod: method,
@@ -38,18 +38,17 @@ func newValidateTokenFunc(secretKey string) ValidateTokenFunc {
 }
 
 func getTokenClaims(ctx iris.Context) TokenClaims {
-	token, ok := ctx.Values().Get(jwt.DefaultContextKey).(*jwt.Token)
+	token, ok := ctx.Values().Get(irisJWT.DefaultContextKey).(*irisJWT.Token)
 	if !ok {
 		return TokenClaims{}
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
+	claims, ok := token.Claims.(irisJWT.MapClaims)
 	if !ok {
 		return TokenClaims{}
 	}
 	return TokenClaims{
 		UserID: claims["user_id"].(string),
 		Name:   claims["name"].(string),
-		Expiry: claims["expiry"].(time.Time),
 	}
 }

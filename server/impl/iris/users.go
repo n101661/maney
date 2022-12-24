@@ -39,8 +39,7 @@ func (s *Server) LogIn(ctx iris.Context) {
 	token, err := s.auth.GenerateToken(auth.TokenClaims{
 		UserID: user.ID,
 		Name:   user.Name,
-		Expiry: time.Now().Add(tokenMaxAge),
-	})
+	}, time.Now().Add(tokenMaxAge))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
