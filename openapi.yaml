@@ -64,13 +64,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/config:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/config:
     put:
       summary: update user config
       tags: ["User"]
@@ -93,13 +87,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserConfig"
-  /{user-id}/accounts:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/accounts:
     post:
       summary: create an account for user
       tags: ["Account"]
@@ -125,13 +113,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Account"
-  /{user-id}/accounts/{account-id}:
+  /users/accounts/{account-id}:
     parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: account-id
         in: path
         required: true
@@ -156,13 +139,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/categories:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/categories:
     post:
       summary: create category
       tags: ["Category"]
@@ -193,13 +170,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Category"
-  /{user-id}/categories/{category-id}:
+  /users/categories/{category-id}:
     parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: category-id
         in: path
         required: true
@@ -224,13 +196,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/shops:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/shops:
     post:
       tags: ["Shop"]
       operationId: CreateShop
@@ -255,13 +221,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Shop"
-  /{user-id}/shops/{shop-id}:
+  /users/shops/{shop-id}:
     parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: shop-id
         in: path
         required: true
@@ -284,13 +245,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/fees:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/fees:
     post:
       tags: ["Fee"]
       operationId: CreateFee
@@ -315,13 +270,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Fee"
-  /{user-id}/fees/{fee-id}:
+  /users/fees/{fee-id}:
     parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: fee-id
         in: path
         required: true
@@ -344,13 +294,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/daily-items:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/daily-items:
     post:
       tags: ["Daily Item"]
       operationId: CreateDailyItem
@@ -381,13 +325,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DailyItem"
-  /{user-id}/daily-items/{daily-item-id}:
+  /users/daily-items/{daily-item-id}:
     parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: daily-item-id
         in: path
         required: true
@@ -410,13 +349,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/daily-items/export:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/daily-items/export:
     get:
       tags: ["Daily Item"]
       operationId: ExportDailyItems
@@ -445,13 +378,7 @@ paths:
                 xml:
                   name: items
                   wrapped: true
-  /{user-id}/daily-items/import:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/daily-items/import:
     post:
       tags: ["Daily Item"]
       operationId: ImportDailyItems
@@ -473,13 +400,7 @@ paths:
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
-  /{user-id}/repeating-items:
-    parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
+  /users/repeating-items:
     post:
       tags: ["Repeating Item"]
       operationId: CreateRepeatingItem
@@ -504,13 +425,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/RepeatingItem"
-  /{user-id}/repeating-items/{repeating-item-id}:
+  /users/repeating-items/{repeating-item-id}:
     parameters:
-      - name: user-id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: repeating-item-id
         in: path
         required: true
