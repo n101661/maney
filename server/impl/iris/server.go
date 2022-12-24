@@ -22,6 +22,7 @@ func NewServer(cfg Config) *Server {
 	s := &Server{
 		app:  iris.Default(),
 		auth: newAuthentication(cfg.SecretKey),
+		db:   nil, // TODO
 	}
 
 	s.registerRoutes()

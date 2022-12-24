@@ -13,6 +13,11 @@ type User struct {
 	Password []byte
 }
 
+type UserConfig struct {
+	CompareItemsInDifferentShop bool `json:"compare_items_in_different_shop"`
+	CompareItemsInSameShop      bool `json:"compare_items_in_same_shop"`
+}
+
 type AssetAccount struct {
 	OID            uint64
 	Name           string

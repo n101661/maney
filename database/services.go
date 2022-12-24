@@ -7,6 +7,8 @@ type UserService interface {
 	Create(models.User) error
 	Update(models.User) error
 	Get(id string) (*models.User, error)
+	UpdateConfig(id string, val models.UserConfig) error
+	GetConfig(id string) (models.UserConfig, error)
 }
 
 type AccountService interface {

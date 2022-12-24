@@ -35,10 +35,10 @@ func (s *Server) LogIn(ctx iris.Context) {
 
 	tokenMaxAge := 8 * time.Hour
 
-	token, err := s.auth.generateToken(map[string]interface{}{
-		"id":     user.ID,
-		"name":   user.Name,
-		"expiry": time.Now().Add(tokenMaxAge),
+	token, err := s.auth.generateToken(tokenClaims{
+		UserID: user.ID,
+		Name:   user.Name,
+		Expiry: time.Now().Add(tokenMaxAge),
 	})
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
@@ -90,4 +90,44 @@ func (s *Server) SignUp(ctx iris.Context) {
 	}
 
 	ctx.StatusCode(iris.StatusOK)
+}
+
+func (s *Server) UpdateConfig(ctx iris.Context) {
+	var r models.UserConfig
+	if err := ctx.ReadJSON(&r); err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		return
+	}
+
+	tokenClaims := s.auth.getTokenClaims(ctx)
+
+	err := s.db.User().UpdateConfig(tokenClaims.UserID, dbModels.UserConfig{
+		CompareItemsInDifferentShop: r.CompareItemsInDifferentShop,
+		CompareItemsInSameShop:      r.CompareItemsInSameShop,
+	})
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		return
+	}
+
+	ctx.StatusCode(iris.StatusOK)
+}
+
+func (s *Server) GetConfig(ctx iris.Context) {
+	tokenClaims := s.auth.getTokenClaims(ctx)
+
+	cfg, err := s.db.User().GetConfig(tokenClaims.UserID)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+		return
+	}
+
+	ctx.StatusCode(iris.StatusOK)
+	if err := ctx.JSON(cfg); err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString(err.Error())
+	}
 }

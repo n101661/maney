@@ -6,11 +6,11 @@ func (s *Server) registerRoutes() {
 	s.app.Post("/log-out", s.LogOut)
 	s.app.Post("/sign-up", s.SignUp)
 
-	user := s.app.Party("/{user-id:string}")
+	user := s.app.Party("/users", s.auth.validateToken)
 
 	{ // user's config
-		user.Put("/config")
-		user.Get("/config")
+		user.Put("/config", s.UpdateConfig)
+		user.Get("/config", s.GetConfig)
 	}
 	{ // user's accounts
 		user.Post("/accounts")
