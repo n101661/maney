@@ -13,49 +13,49 @@ type UserService interface {
 
 type AccountService interface {
 	// Create returns ErrResourceExisted if there is an existed account.
-	Create(userOID uint64, account models.AssetAccount) error
-	Update(userOID uint64, account models.AssetAccount) error
-	Delete(userOID, accountOID uint64) error
-	Get(userOID, accountOID uint64) (*models.AssetAccount, error)
+	Create(userID string, account models.AssetAccount) error
+	Update(userID string, account models.AssetAccount) error
+	Delete(userID string, accountOID uint64) error
+	Get(userID string, accountOID uint64) (*models.AssetAccount, error)
 }
 
 type CategoryService interface {
 	// Create returns ErrResourceExisted if there is an existed category.
-	Create(userOID uint64, category models.Category) error
-	Update(userOID uint64, category models.Category) error
-	Delete(userOID, categoryOID uint64) error
-	Get(userOID, categoryOID uint64) (*models.Category, error)
+	Create(userID string, category models.Category) error
+	Update(userID string, category models.Category) error
+	Delete(userID string, categoryOID uint64) error
+	Get(userID string, categoryOID uint64) (*models.Category, error)
 }
 
 type ShopService interface {
 	// Create returns ErrResourceExisted if there is an existed shop.
-	Create(userOID uint64, shop models.Shop) error
-	Update(userOID uint64, shop models.Shop) error
-	Delete(userOID, shopOID uint64) error
-	Get(userOID, shopOID uint64) (*models.Shop, error)
+	Create(userID string, shop models.Shop) error
+	Update(userID string, shop models.Shop) error
+	Delete(userID string, shopOID uint64) error
+	Get(userID string, shopOID uint64) (*models.Shop, error)
 }
 
 type FeeService interface {
 	// Create returns ErrResourceExisted if there is an existed fee.
-	Create(userOID uint64, fee models.Fee) error
-	Update(userOID uint64, fee models.Fee) error
-	Delete(userOID, feeOID uint64) error
-	Get(userOID, feeOID uint64) (*models.Fee, error)
+	Create(userID string, fee models.Fee) error
+	Update(userID string, fee models.Fee) error
+	Delete(userID string, feeOID uint64) error
+	Get(userID string, feeOID uint64) (*models.Fee, error)
 }
 
 type DailyItemService interface {
 	// Create returns ErrResourceExisted if there is an existed daily item.
-	Create(userOID uint64, item models.DailyItem) error
-	CreateMultiple(userOID uint64, items []models.DailyItem) error
-	Update(userOID uint64, item models.DailyItem) error
-	Delete(userOID, itemOID uint64) error
-	List(userOID uint64) ([]models.DailyItem, error)
+	Create(userID string, item models.DailyItem) error
+	CreateMultiple(userID string, items []models.DailyItem) error
+	Update(userID string, item models.DailyItem) error
+	Delete(userID string, itemOID uint64) error
+	List(userID string) ([]models.DailyItem, error)
 }
 
 type RepeatingItemService interface {
 	// Create returns ErrResourceExisted if there is an existed repeating item.
-	Create(userOID uint64, item models.RepeatingItem) error
-	Update(userOID uint64, item models.RepeatingItem) error
-	Delete(userOID, itemOID uint64) error
-	List(userOID uint64) ([]models.RepeatingItem, error)
+	Create(userID string, item models.RepeatingItem) error
+	Update(userID string, item models.RepeatingItem) error
+	Delete(userID string, itemOID uint64) error
+	List(userID string) ([]models.RepeatingItem, error)
 }
