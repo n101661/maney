@@ -8,6 +8,11 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+const (
+	claimUserID   = "maney_user_id"
+	claimUserName = "maney_name"
+)
+
 var (
 	method = irisJWT.SigningMethodES512
 )
@@ -20,9 +25,9 @@ type TokenClaims struct {
 func newGenerateTokenFunc(secretKey string) GenerateTokenFunc {
 	return func(claims TokenClaims, expiry time.Time) (token string, err error) {
 		return irisJWT.NewTokenWithClaims(method, irisJWT.MapClaims(irisJWT.MapClaims{
-			"user_id": claims.UserID,
-			"name":    claims.Name,
-			"exp":     jwt.NewNumericDate(expiry),
+			claimUserID:   claims.UserID,
+			claimUserName: claims.Name,
+			"exp":         jwt.NewNumericDate(expiry),
 		})).SignedString(secretKey)
 	}
 }
@@ -48,7 +53,7 @@ func getTokenClaims(ctx iris.Context) TokenClaims {
 		return TokenClaims{}
 	}
 	return TokenClaims{
-		UserID: claims["user_id"].(string),
-		Name:   claims["name"].(string),
+		UserID: claims[claimUserID].(string),
+		Name:   claims[claimUserName].(string),
 	}
 }
