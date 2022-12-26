@@ -14,14 +14,14 @@ import (
 )
 
 func (s *Server) LogIn(ctx iris.Context) {
-	var r models.LogInBody
+	var r models.LogInRequestBody
 	if err := ctx.ReadJSON(&r); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
 		return
 	}
 
-	user, err := s.db.User().Get(r.Id)
+	user, err := s.db.User().Get(r.ID)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
@@ -59,7 +59,7 @@ func (s *Server) LogOut(ctx iris.Context) {
 }
 
 func (s *Server) SignUp(ctx iris.Context) {
-	var r models.SignUpBody
+	var r models.SignUpRequestBody
 	if err := ctx.ReadJSON(&r); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
@@ -74,7 +74,7 @@ func (s *Server) SignUp(ctx iris.Context) {
 	}
 
 	err = s.db.User().Create(dbModels.User{
-		ID:       r.Id,
+		ID:       r.ID,
 		Name:     r.Name,
 		Password: pwd,
 	})
@@ -93,7 +93,7 @@ func (s *Server) SignUp(ctx iris.Context) {
 }
 
 func (s *Server) UpdateConfig(ctx iris.Context) {
-	var r models.UserConfig
+	var r models.UserConfigRequestBody
 	if err := ctx.ReadJSON(&r); err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())

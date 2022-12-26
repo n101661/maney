@@ -1,0 +1,344 @@
+package iris
+
+import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/n101661/maney/database"
+	dbModels "github.com/n101661/maney/database/models"
+	"github.com/n101661/maney/server/models"
+	"github.com/stretchr/testify/mock"
+)
+
+const serverAddr = "localhost:8080"
+
+var (
+	myTestServer   *Server
+	myTestPassword = struct {
+		Raw       string
+		Encrypted []byte
+	}{
+		Raw:       "my-password",
+		Encrypted: mustDecodeBase64("JDJhJDA4JGM1ZlB6WE13MHQzQVBxLkF3QndDYk9uekouR20vSkJOOUg1NUw5LkRBU1R3bkczcVBKWlRD"),
+	}
+)
+
+func TestMain(m *testing.M) {
+	myTestServer = NewServer(Config{
+		SecretKey: []byte("maney-secret-key"),
+	})
+
+	go func() {
+		if err := myTestServer.ListenAndServe(serverAddr); err != nil {
+			os.Exit(1)
+		}
+	}()
+
+	os.Exit(m.Run())
+}
+
+type mockAccountService struct{ mock.Mock }
+
+// Create implements database.AccountService
+func (*mockAccountService) Create(userID string, account dbModels.AssetAccount) error {
+	panic("unimplemented")
+}
+
+// Delete implements database.AccountService
+func (*mockAccountService) Delete(userID string, accountOID uint64) error {
+	panic("unimplemented")
+}
+
+// Get implements database.AccountService
+func (*mockAccountService) Get(userID string, accountOID uint64) (*dbModels.AssetAccount, error) {
+	panic("unimplemented")
+}
+
+// Update implements database.AccountService
+func (*mockAccountService) Update(userID string, account dbModels.AssetAccount) error {
+	panic("unimplemented")
+}
+
+type mockCategoryService struct{ mock.Mock }
+
+// Create implements database.CategoryService
+func (*mockCategoryService) Create(userID string, category dbModels.Category) error {
+	panic("unimplemented")
+}
+
+// Delete implements database.CategoryService
+func (*mockCategoryService) Delete(userID string, categoryOID uint64) error {
+	panic("unimplemented")
+}
+
+// Get implements database.CategoryService
+func (*mockCategoryService) Get(userID string, categoryOID uint64) (*dbModels.Category, error) {
+	panic("unimplemented")
+}
+
+// Update implements database.CategoryService
+func (*mockCategoryService) Update(userID string, category dbModels.Category) error {
+	panic("unimplemented")
+}
+
+type mockDailyItemService struct{ mock.Mock }
+
+// Create implements database.DailyItemService
+func (*mockDailyItemService) Create(userID string, item dbModels.DailyItem) error {
+	panic("unimplemented")
+}
+
+// CreateMultiple implements database.DailyItemService
+func (*mockDailyItemService) CreateMultiple(userID string, items []dbModels.DailyItem) error {
+	panic("unimplemented")
+}
+
+// Delete implements database.DailyItemService
+func (*mockDailyItemService) Delete(userID string, itemOID uint64) error {
+	panic("unimplemented")
+}
+
+// List implements database.DailyItemService
+func (*mockDailyItemService) List(userID string) ([]dbModels.DailyItem, error) {
+	panic("unimplemented")
+}
+
+// Update implements database.DailyItemService
+func (*mockDailyItemService) Update(userID string, item dbModels.DailyItem) error {
+	panic("unimplemented")
+}
+
+type mockFeeService struct{ mock.Mock }
+
+// Create implements database.FeeService
+func (*mockFeeService) Create(userID string, fee dbModels.Fee) error {
+	panic("unimplemented")
+}
+
+// Delete implements database.FeeService
+func (*mockFeeService) Delete(userID string, feeOID uint64) error {
+	panic("unimplemented")
+}
+
+// Get implements database.FeeService
+func (*mockFeeService) Get(userID string, feeOID uint64) (*dbModels.Fee, error) {
+	panic("unimplemented")
+}
+
+// Update implements database.FeeService
+func (*mockFeeService) Update(userID string, fee dbModels.Fee) error {
+	panic("unimplemented")
+}
+
+type mockRepeatingItemService struct{ mock.Mock }
+
+// Create implements database.RepeatingItemService
+func (*mockRepeatingItemService) Create(userID string, item dbModels.RepeatingItem) error {
+	panic("unimplemented")
+}
+
+// Delete implements database.RepeatingItemService
+func (*mockRepeatingItemService) Delete(userID string, itemOID uint64) error {
+	panic("unimplemented")
+}
+
+// List implements database.RepeatingItemService
+func (*mockRepeatingItemService) List(userID string) ([]dbModels.RepeatingItem, error) {
+	panic("unimplemented")
+}
+
+// Update implements database.RepeatingItemService
+func (*mockRepeatingItemService) Update(userID string, item dbModels.RepeatingItem) error {
+	panic("unimplemented")
+}
+
+type mockShopService struct{ mock.Mock }
+
+// Create implements database.ShopService
+func (*mockShopService) Create(userID string, shop dbModels.Shop) error {
+	panic("unimplemented")
+}
+
+// Delete implements database.ShopService
+func (*mockShopService) Delete(userID string, shopOID uint64) error {
+	panic("unimplemented")
+}
+
+// Get implements database.ShopService
+func (*mockShopService) Get(userID string, shopOID uint64) (*dbModels.Shop, error) {
+	panic("unimplemented")
+}
+
+// Update implements database.ShopService
+func (*mockShopService) Update(userID string, shop dbModels.Shop) error {
+	panic("unimplemented")
+}
+
+type mockUserService struct{ mock.Mock }
+
+// Create implements database.UserService
+func (s *mockUserService) Create(m dbModels.User) error {
+	args := s.Called(mock.Anything)
+	return args.Error(0)
+}
+
+// Get implements database.UserService
+func (s *mockUserService) Get(id string) (*dbModels.User, error) {
+	args := s.Called(id)
+	return args.Get(0).(*dbModels.User), args.Error(1)
+}
+
+// GetConfig implements database.UserService
+func (s *mockUserService) GetConfig(id string) (dbModels.UserConfig, error) {
+	args := s.Called(id)
+	return args.Get(0).(dbModels.UserConfig), args.Error(1)
+}
+
+// Update implements database.UserService
+func (*mockUserService) Update(dbModels.User) error {
+	panic("unimplemented")
+}
+
+// UpdateConfig implements database.UserService
+func (s *mockUserService) UpdateConfig(id string, val dbModels.UserConfig) error {
+	args := s.Called(id, val)
+	return args.Error(0)
+}
+
+type mockDB struct {
+	accountService       *mockAccountService
+	categoryService      *mockCategoryService
+	dailyItemService     *mockDailyItemService
+	feeService           *mockFeeService
+	repeatingItemService *mockRepeatingItemService
+	shopService          *mockShopService
+	userService          *mockUserService
+}
+
+// Account implements database.DB
+func (db *mockDB) Account() database.AccountService {
+	return db.accountService
+}
+
+// Category implements database.DB
+func (db *mockDB) Category() database.CategoryService {
+	return db.categoryService
+}
+
+// DailyItem implements database.DB
+func (db *mockDB) DailyItem() database.DailyItemService {
+	return db.dailyItemService
+}
+
+// Fee implements database.DB
+func (db *mockDB) Fee() database.FeeService {
+	return db.feeService
+}
+
+// RepeatingItem implements database.DB
+func (db *mockDB) RepeatingItem() database.RepeatingItemService {
+	return db.repeatingItemService
+}
+
+// Shop implements database.DB
+func (db *mockDB) Shop() database.ShopService {
+	return db.shopService
+}
+
+// User implements database.DB
+func (db *mockDB) User() database.UserService {
+	return db.userService
+}
+
+func NewMockDB() *mockDB {
+	return &mockDB{
+		accountService:       new(mockAccountService),
+		categoryService:      new(mockCategoryService),
+		dailyItemService:     new(mockDailyItemService),
+		feeService:           new(mockFeeService),
+		repeatingItemService: new(mockRepeatingItemService),
+		shopService:          new(mockShopService),
+		userService:          new(mockUserService),
+	}
+}
+
+type testScenario[M any] struct {
+	Name  string
+	Input M
+}
+
+func mustHTTPRequest(method, url string, body interface{}) *http.Request {
+	r, err := http.NewRequest(method, url, MustHTTPBody(body))
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func MustHTTPRequestWithToken(method, url string, body interface{}, token string) *http.Request {
+	r := mustHTTPRequest(method, url, body)
+	r.Header.Set("Authorization", "Bearer "+token)
+	return r
+}
+
+func MustHTTPBody(v interface{}) io.Reader {
+	data, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.NewReader(data)
+}
+
+func MustGetResponseBody[M any](body io.ReadCloser) *M {
+	data, err := io.ReadAll(body)
+	if err != nil {
+		panic(err)
+	}
+
+	m := new(M)
+	if err := json.Unmarshal(data, m); err != nil {
+		panic(err)
+	}
+	return m
+}
+
+func mustDecodeBase64(s string) []byte {
+	decoded, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return decoded
+}
+
+// MustLogIn logs `my-id` in the server with `myTestPassword.Raw` password.
+// You MUST call this function after calling `registerMockLogIn` function.
+func MustLogIn() (token string) {
+	resp, err := http.Post("http://"+serverAddr+"/log-in", "application/json", MustHTTPBody(models.LogInRequestBody{
+		ID:       "my-id",
+		Password: myTestPassword.Raw,
+	}))
+	if err != nil {
+		panic(err)
+	}
+
+	cookie := resp.Header.Get("Set-Cookie")
+
+	return cookie[6:strings.Index(cookie, ";")]
+}
+
+func RegisterMockLogIn(db *mockDB) {
+	db.userService.
+		On("Get", "my-id").Return(
+		&dbModels.User{
+			ID:       "my-id",
+			Name:     "tester",
+			Password: myTestPassword.Encrypted,
+		}, nil,
+	).Once()
+}

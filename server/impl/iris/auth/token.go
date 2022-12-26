@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	method = irisJWT.SigningMethodES512
+	method = irisJWT.SigningMethodHS512
 )
 
 type TokenClaims struct {
@@ -22,7 +22,7 @@ type TokenClaims struct {
 	Name   string
 }
 
-func newGenerateTokenFunc(secretKey string) GenerateTokenFunc {
+func newGenerateTokenFunc(secretKey []byte) GenerateTokenFunc {
 	return func(claims TokenClaims, expiry time.Time) (token string, err error) {
 		return irisJWT.NewTokenWithClaims(method, irisJWT.MapClaims(irisJWT.MapClaims{
 			claimUserID:   claims.UserID,
@@ -32,7 +32,7 @@ func newGenerateTokenFunc(secretKey string) GenerateTokenFunc {
 	}
 }
 
-func newValidateTokenFunc(secretKey string) ValidateTokenFunc {
+func newValidateTokenFunc(secretKey []byte) ValidateTokenFunc {
 	return irisJWT.New(irisJWT.Config{
 		ValidationKeyGetter: func(*irisJWT.Token) (interface{}, error) {
 			return secretKey, nil

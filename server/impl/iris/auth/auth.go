@@ -23,7 +23,7 @@ type Authentication struct {
 	ValidatePassword ValidatePasswordFunc
 }
 
-func NewAuthentication(secretKey string) *Authentication {
+func NewAuthentication(secretKey []byte) *Authentication {
 	return &Authentication{
 		GenerateToken:    newGenerateTokenFunc(secretKey),
 		ValidateToken:    newValidateTokenFunc(secretKey),
