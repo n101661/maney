@@ -98,6 +98,12 @@ paths:
             schema:
               $ref: "#/components/schemas/Account"
       responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectOID"
         default:
           $ref: "#/components/responses/DefaultResponse"
     get:
@@ -112,14 +118,20 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Account"
-  /users/accounts/{account-id}:
+                  allOf:
+                    - $ref: "#/components/schemas/ObjectOID"
+                    - $ref: "#/components/schemas/Account"
+                    - type: object
+                      properties:
+                        balance:
+                          $ref: "#/components/schemas/Decimal"
+  /users/accounts/{account-oid}:
     parameters:
-      - name: account-id
+      - name: account-oid
         in: path
         required: true
         schema:
-          type: integer
+          $ref: "#/components/schemas/OID"
     put:
       summary: update account
       tags: ["Account"]
@@ -170,13 +182,13 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Category"
-  /users/categories/{category-id}:
+  /users/categories/{category-oid}:
     parameters:
-      - name: category-id
+      - name: category-oid
         in: path
         required: true
         schema:
-          type: integer
+          $ref: "#/components/schemas/OID"
     put:
       summary: update category
       tags: ["Category"]
@@ -221,13 +233,13 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Shop"
-  /users/shops/{shop-id}:
+  /users/shops/{shop-oid}:
     parameters:
-      - name: shop-id
+      - name: shop-oid
         in: path
         required: true
         schema:
-          type: integer
+          $ref: "#/components/schemas/OID"
     put:
       tags: ["Shop"]
       operationId: UpdateShop
@@ -270,13 +282,13 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Fee"
-  /users/fees/{fee-id}:
+  /users/fees/{fee-oid}:
     parameters:
-      - name: fee-id
+      - name: fee-oid
         in: path
         required: true
         schema:
-          type: integer
+          $ref: "#/components/schemas/OID"
     put:
       tags: ["Fee"]
       operationId: UpdateFee
@@ -325,13 +337,13 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DailyItem"
-  /users/daily-items/{daily-item-id}:
+  /users/daily-items/{daily-item-oid}:
     parameters:
-      - name: daily-item-id
+      - name: daily-item-oid
         in: path
         required: true
         schema:
-          type: integer
+          $ref: "#/components/schemas/OID"
     put:
       tags: ["Daily Item"]
       operationId: UpdateDailyItem
@@ -425,13 +437,13 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/RepeatingItem"
-  /users/repeating-items/{repeating-item-id}:
+  /users/repeating-items/{repeating-item-oid}:
     parameters:
-      - name: repeating-item-id
+      - name: repeating-item-oid
         in: path
         required: true
         schema:
-          type: integer
+          $ref: "#/components/schemas/OID"
     put:
       tags: ["Repeating Item"]
       operationId: UpdateRepeatingItem
@@ -451,6 +463,11 @@ paths:
           $ref: "#/components/responses/DefaultResponse"
 components:
   schemas:
+    Decimal:
+      type: string
+      format: float64
+      example: 0.0
+      description: a string represented as a float64
     UserConfig:
       type: object
       properties:
@@ -458,17 +475,25 @@ components:
           type: boolean
         compare_items_in_same_shop:
           type: boolean
+    OID:
+      type: string
+      format: uint64
+      example: 0
+    ObjectOID:
+      type: object
+      properties:
+        oid:
+          $ref: "#/components/schemas/OID"
     Account:
       type: object
       properties:
         name:
           type: string
           description: account name
-        icon:
-          type: integer
-          description: icon id
+        icon_oid:
+          $ref: "#/components/schemas/OID"
         initial_balance:
-          type: number
+          $ref: "#/components/schemas/Decimal"
       required:
         - name
     CategoryType:
@@ -481,9 +506,9 @@ components:
           $ref: "#/components/schemas/CategoryType"
         name:
           type: string
-        icon:
-          type: integer
-          description: icon id
+        icon_oid:
+          $ref: "#/components/schemas/OID"
+          description: icon oid
       required:
         - type
         - name
@@ -506,9 +531,9 @@ components:
           description: choose one of properties
           properties:
             rate:
-              type: number
+              $ref: "#/components/schemas/Decimal"
             fixed:
-              type: number
+              $ref: "#/components/schemas/Decimal"
     Item:
       type: object
       properties:
@@ -517,7 +542,7 @@ components:
         category:
           type: array
           items:
-            type: integer
+            $ref: "#/components/schemas/OID"
             xml:
               name: category
           minLength: 1
@@ -525,17 +550,17 @@ components:
             name: categories
             attribute: false
             wrapped: true
-        shop:
-          type: integer
+        shop_oid:
+          $ref: "#/components/schemas/OID"
         quantity:
           type: object
           properties:
             value:
-              type: number
+              $ref: "#/components/schemas/Decimal"
         fee:
           type: integer
         price:
-          type: number
+          $ref: "#/components/schemas/Decimal"
         memo:
           type: string
       required:

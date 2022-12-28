@@ -22,13 +22,13 @@ func TestServer_LogIn(t *testing.T) {
 		scenarios := []testScenario[models.LogInRequestBody]{
 			{
 				Name: "missing id",
-				Input: models.LogInRequestBody{
+				RequestBody: models.LogInRequestBody{
 					ID:       "",
 					Password: myTestPassword.Raw,
 				},
 			}, {
 				Name: "missing password",
-				Input: models.LogInRequestBody{
+				RequestBody: models.LogInRequestBody{
 					ID:       "my-id",
 					Password: "",
 				},
@@ -36,7 +36,7 @@ func TestServer_LogIn(t *testing.T) {
 		}
 
 		for _, s := range scenarios {
-			resp, err := http.Post(addr, "application/json", MustHTTPBody(s.Input))
+			resp, err := http.Post(addr, "application/json", MustHTTPBody(s.RequestBody))
 			assert.NoError(err, s.Name)
 			assert.EqualValues(iris.StatusBadRequest, resp.StatusCode, s.Name)
 		}
@@ -111,21 +111,21 @@ func TestServer_SignUp(t *testing.T) {
 	{ // missing required field
 		scenarios := []testScenario[models.SignUpRequestBody]{{
 			Name: "missing id",
-			Input: models.SignUpRequestBody{
+			RequestBody: models.SignUpRequestBody{
 				ID:       "",
 				Name:     "tester",
 				Password: myTestPassword.Raw,
 			},
 		}, {
 			Name: "missing name",
-			Input: models.SignUpRequestBody{
+			RequestBody: models.SignUpRequestBody{
 				ID:       "my-id",
 				Name:     "",
 				Password: myTestPassword.Raw,
 			},
 		}, {
 			Name: "missing password",
-			Input: models.SignUpRequestBody{
+			RequestBody: models.SignUpRequestBody{
 				ID:       "my-id",
 				Name:     "tester",
 				Password: "",
@@ -133,7 +133,7 @@ func TestServer_SignUp(t *testing.T) {
 		}}
 
 		for _, s := range scenarios {
-			resp, err := http.Post(addr, "application/json", MustHTTPBody(s.Input))
+			resp, err := http.Post(addr, "application/json", MustHTTPBody(s.RequestBody))
 			assert.NoError(err, s.Name)
 			assert.EqualValues(iris.StatusBadRequest, resp.StatusCode, s.Name)
 		}

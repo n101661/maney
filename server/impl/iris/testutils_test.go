@@ -13,6 +13,7 @@ import (
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
 	"github.com/n101661/maney/server/models"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -46,29 +47,37 @@ func TestMain(m *testing.M) {
 type mockAccountService struct{ mock.Mock }
 
 // Create implements database.AccountService
-func (*mockAccountService) Create(userID string, account dbModels.AssetAccount) error {
-	panic("unimplemented")
+func (s *mockAccountService) Create(userID string, account dbModels.AssetAccount) (uint64, error) {
+	if account.InitialBalance.IsZero() {
+		account.InitialBalance = decimal.Zero
+	}
+
+	args := s.Called(userID, account)
+	return args.Get(0).(uint64), args.Error(1)
 }
 
 // Delete implements database.AccountService
-func (*mockAccountService) Delete(userID string, accountOID uint64) error {
-	panic("unimplemented")
+func (s *mockAccountService) Delete(userID string, accountOID uint64) error {
+	args := s.Called(userID, accountOID)
+	return args.Error(0)
 }
 
-// Get implements database.AccountService
-func (*mockAccountService) Get(userID string, accountOID uint64) (*dbModels.AssetAccount, error) {
-	panic("unimplemented")
+// List implements database.AccountService
+func (s *mockAccountService) List(userID string) ([]dbModels.AssetAccount, error) {
+	args := s.Called(userID)
+	return args.Get(0).([]dbModels.AssetAccount), args.Error(1)
 }
 
 // Update implements database.AccountService
-func (*mockAccountService) Update(userID string, account dbModels.AssetAccount) error {
-	panic("unimplemented")
+func (s *mockAccountService) Update(userID string, account dbModels.AssetAccount) error {
+	args := s.Called(userID, account)
+	return args.Error(0)
 }
 
 type mockCategoryService struct{ mock.Mock }
 
 // Create implements database.CategoryService
-func (*mockCategoryService) Create(userID string, category dbModels.Category) error {
+func (*mockCategoryService) Create(userID string, category dbModels.Category) (uint64, error) {
 	panic("unimplemented")
 }
 
@@ -90,7 +99,7 @@ func (*mockCategoryService) Update(userID string, category dbModels.Category) er
 type mockDailyItemService struct{ mock.Mock }
 
 // Create implements database.DailyItemService
-func (*mockDailyItemService) Create(userID string, item dbModels.DailyItem) error {
+func (*mockDailyItemService) Create(userID string, item dbModels.DailyItem) (uint64, error) {
 	panic("unimplemented")
 }
 
@@ -117,7 +126,7 @@ func (*mockDailyItemService) Update(userID string, item dbModels.DailyItem) erro
 type mockFeeService struct{ mock.Mock }
 
 // Create implements database.FeeService
-func (*mockFeeService) Create(userID string, fee dbModels.Fee) error {
+func (*mockFeeService) Create(userID string, fee dbModels.Fee) (uint64, error) {
 	panic("unimplemented")
 }
 
@@ -139,7 +148,7 @@ func (*mockFeeService) Update(userID string, fee dbModels.Fee) error {
 type mockRepeatingItemService struct{ mock.Mock }
 
 // Create implements database.RepeatingItemService
-func (*mockRepeatingItemService) Create(userID string, item dbModels.RepeatingItem) error {
+func (*mockRepeatingItemService) Create(userID string, item dbModels.RepeatingItem) (uint64, error) {
 	panic("unimplemented")
 }
 
@@ -161,7 +170,7 @@ func (*mockRepeatingItemService) Update(userID string, item dbModels.RepeatingIt
 type mockShopService struct{ mock.Mock }
 
 // Create implements database.ShopService
-func (*mockShopService) Create(userID string, shop dbModels.Shop) error {
+func (*mockShopService) Create(userID string, shop dbModels.Shop) (uint64, error) {
 	panic("unimplemented")
 }
 
@@ -269,8 +278,8 @@ func NewMockDB() *mockDB {
 }
 
 type testScenario[M any] struct {
-	Name  string
-	Input M
+	Name        string
+	RequestBody M
 }
 
 func mustHTTPRequest(method, url string, body interface{}) *http.Request {
@@ -288,6 +297,10 @@ func MustHTTPRequestWithToken(method, url string, body interface{}, token string
 }
 
 func MustHTTPBody(v interface{}) io.Reader {
+	if r, ok := v.(io.Reader); ok {
+		return r
+	}
+
 	data, err := json.Marshal(v)
 	if err != nil {
 		panic(err)
@@ -306,6 +319,14 @@ func MustGetResponseBody[M any](body io.ReadCloser) *M {
 		panic(err)
 	}
 	return m
+}
+
+func MustGetResponseBodyJSON(body io.ReadCloser) string {
+	data, err := io.ReadAll(body)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
 }
 
 func mustDecodeBase64(s string) []byte {
@@ -341,4 +362,12 @@ func RegisterMockLogIn(db *mockDB) {
 			Password: myTestPassword.Encrypted,
 		}, nil,
 	).Once()
+}
+
+func MustDecimalFromString(s string) decimal.Decimal {
+	d, err := decimal.NewFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
