@@ -265,6 +265,16 @@ func (db *mockDB) User() database.UserService {
 	return db.userService
 }
 
+func (db *mockDB) AssertExpectations(t mock.TestingT) bool {
+	return db.accountService.AssertExpectations(t) &&
+		db.categoryService.AssertExpectations(t) &&
+		db.dailyItemService.AssertExpectations(t) &&
+		db.feeService.AssertExpectations(t) &&
+		db.repeatingItemService.AssertExpectations(t) &&
+		db.shopService.AssertExpectations(t) &&
+		db.userService.AssertExpectations(t)
+}
+
 func NewMockDB() *mockDB {
 	return &mockDB{
 		accountService:       new(mockAccountService),
@@ -290,10 +300,12 @@ func mustHTTPRequest(method, url string, body interface{}) *http.Request {
 	return r
 }
 
-func MustHTTPRequestWithToken(method, url string, body interface{}, token string) *http.Request {
+func httpDoWithToken(method, url string, body interface{}, token string) (*http.Response, error) {
 	r := mustHTTPRequest(method, url, body)
+	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("Authorization", "Bearer "+token)
-	return r
+
+	return http.DefaultClient.Do(r)
 }
 
 func MustHTTPBody(v interface{}) io.Reader {
@@ -341,12 +353,10 @@ func mustDecodeBase64(s string) []byte {
 	return decoded
 }
 
-// MustLogIn logs `my-id` in the server with `myTestPassword.Raw` password.
-// You MUST call this function after calling `registerMockLogIn` function.
-func MustLogIn() (token string) {
+func MustLogIn(user testUserInfo) (token string) {
 	resp, err := http.Post("http://"+serverAddr+"/log-in", "application/json", MustHTTPBody(models.LogInRequestBody{
-		ID:       "my-id",
-		Password: myTestPassword.Raw,
+		ID:       user.ID,
+		Password: user.Password.Raw,
 	}))
 	if err != nil {
 		panic(err)
@@ -357,15 +367,32 @@ func MustLogIn() (token string) {
 	return cookie[6:strings.Index(cookie, ";")]
 }
 
-func RegisterMockLogIn(db *mockDB) {
+type testUserInfo struct {
+	ID       string
+	Name     string
+	Password struct {
+		Raw       string
+		Encrypted []byte
+	}
+}
+
+func RegisterMockLogIn(db *mockDB) testUserInfo {
+	user := testUserInfo{
+		ID:       "my-id",
+		Name:     "tester",
+		Password: myTestPassword,
+	}
+
 	db.userService.
-		On("Get", "my-id").Return(
+		On("Get", user.ID).Return(
 		&dbModels.User{
-			ID:       "my-id",
-			Name:     "tester",
-			Password: myTestPassword.Encrypted,
+			ID:       user.ID,
+			Name:     user.Name,
+			Password: user.Password.Encrypted,
 		}, nil,
 	).Once()
+
+	return user
 }
 
 func MustDecimalFromString(s string) decimal.Decimal {

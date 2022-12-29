@@ -53,7 +53,7 @@ func TestServer_LogIn(t *testing.T) {
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusUnauthorized, resp.StatusCode)
 
-		db.userService.Mock.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // bad password
 		db := NewMockDB()
@@ -71,7 +71,7 @@ func TestServer_LogIn(t *testing.T) {
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusUnauthorized, resp.StatusCode)
 
-		db.userService.Mock.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // log in successful
 		db := NewMockDB()
@@ -90,7 +90,7 @@ func TestServer_LogIn(t *testing.T) {
 		assert.EqualValues(iris.StatusOK, resp.StatusCode)
 		assert.NotEmpty(resp.Header.Get("Set-Cookie"))
 
-		db.userService.Mock.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 }
 
@@ -155,7 +155,7 @@ func TestServer_SignUp(t *testing.T) {
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusConflict, resp.StatusCode)
 
-		db.userService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // failed to create user(unexpected error)
 		db := NewMockDB()
@@ -174,7 +174,7 @@ func TestServer_SignUp(t *testing.T) {
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
 
-		db.userService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // sign up successful
 		db := NewMockDB()
@@ -193,7 +193,7 @@ func TestServer_SignUp(t *testing.T) {
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusOK, resp.StatusCode)
 
-		db.userService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 }
 
@@ -202,39 +202,39 @@ func TestServer_UpdateConfig(t *testing.T) {
 
 	{ // failed to update config(unexpected error)
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.userService.On("UpdateConfig", "my-id", dbModels.UserConfig{
+		user := RegisterMockLogIn(db)
+		db.userService.On("UpdateConfig", user.ID, dbModels.UserConfig{
 			CompareItemsInDifferentShop: false,
 			CompareItemsInSameShop:      true,
 		}).Return(errors.New("unexpected error")).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", "http://"+serverAddr+"/users/config", models.UserConfigRequestBody{
+		resp, err := httpDoWithToken("PUT", "http://"+serverAddr+"/users/config", models.UserConfigRequestBody{
 			CompareItemsInDifferentShop: false,
 			CompareItemsInSameShop:      true,
-		}, MustLogIn()))
+		}, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
 
-		db.userService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // update config successful
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.userService.On("UpdateConfig", "my-id", dbModels.UserConfig{
+		user := RegisterMockLogIn(db)
+		db.userService.On("UpdateConfig", user.ID, dbModels.UserConfig{
 			CompareItemsInDifferentShop: false,
 			CompareItemsInSameShop:      true,
 		}).Return(nil).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", "http://"+serverAddr+"/users/config", models.UserConfigRequestBody{
+		resp, err := httpDoWithToken("PUT", "http://"+serverAddr+"/users/config", models.UserConfigRequestBody{
 			CompareItemsInDifferentShop: false,
 			CompareItemsInSameShop:      true,
-		}, MustLogIn()))
+		}, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusOK, resp.StatusCode)
 
-		db.userService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 }
 
@@ -243,15 +243,15 @@ func TestServer_GetConfig(t *testing.T) {
 
 	{ // failed to get config(unexpected error)
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.userService.On("GetConfig", "my-id").Return(dbModels.UserConfig{}, errors.New("unexpected error")).Once()
+		user := RegisterMockLogIn(db)
+		db.userService.On("GetConfig", user.ID).Return(dbModels.UserConfig{}, errors.New("unexpected error")).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("GET", "http://"+serverAddr+"/users/config", nil, MustLogIn()))
+		resp, err := httpDoWithToken("GET", "http://"+serverAddr+"/users/config", nil, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
 
-		db.userService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // get config successful
 		type response struct {
@@ -260,14 +260,14 @@ func TestServer_GetConfig(t *testing.T) {
 		}
 
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.userService.On("GetConfig", "my-id").Return(dbModels.UserConfig{
+		user := RegisterMockLogIn(db)
+		db.userService.On("GetConfig", user.ID).Return(dbModels.UserConfig{
 			CompareItemsInDifferentShop: true,
 			CompareItemsInSameShop:      false,
 		}, nil).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("GET", "http://"+serverAddr+"/users/config", nil, MustLogIn()))
+		resp, err := httpDoWithToken("GET", "http://"+serverAddr+"/users/config", nil, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusOK, resp.StatusCode)
 		assert.Equal(&response{
@@ -275,6 +275,6 @@ func TestServer_GetConfig(t *testing.T) {
 			CompareItemsInSameShop:      false,
 		}, MustGetResponseBody[response](resp.Body))
 
-		db.userService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 }

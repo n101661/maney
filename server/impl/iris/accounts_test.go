@@ -2,7 +2,6 @@ package iris
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 	"testing"
 
@@ -31,18 +30,20 @@ func TestServer_CreateAccount(t *testing.T) {
 
 		for _, s := range scenarios {
 			db := NewMockDB()
-			RegisterMockLogIn(db)
+			user := RegisterMockLogIn(db)
 			myTestServer.db = db
 
-			resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("POST", addr, strings.NewReader(s.RequestBody), MustLogIn()))
+			resp, err := httpDoWithToken("POST", addr, strings.NewReader(s.RequestBody), MustLogIn(user))
 			assert.NoError(err, s.Name)
 			assert.EqualValues(iris.StatusBadRequest, resp.StatusCode, s.Name)
+
+			db.AssertExpectations(t)
 		}
 	}
 	{ // the account has already existed
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.accountService.On("Create", "my-id", dbModels.AssetAccount{
+		user := RegisterMockLogIn(db)
+		db.accountService.On("Create", user.ID, dbModels.AssetAccount{
 			Name:           "account-name",
 			IconOID:        0,
 			InitialBalance: decimal.Zero,
@@ -50,20 +51,20 @@ func TestServer_CreateAccount(t *testing.T) {
 		}).Return(uint64(0), database.ErrResourceExisted).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("POST", addr, strings.NewReader(`{
+		resp, err := httpDoWithToken("POST", addr, strings.NewReader(`{
 			"name": "account-name",
 			"icon_oid": "0",
 			"initial_balance": "0"
-		}`), MustLogIn()))
+		}`), MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusConflict, resp.StatusCode)
 
-		db.accountService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // failed to create account(unexpected error)
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.accountService.On("Create", "my-id", dbModels.AssetAccount{
+		user := RegisterMockLogIn(db)
+		db.accountService.On("Create", user.ID, dbModels.AssetAccount{
 			Name:           "account-name",
 			IconOID:        0,
 			InitialBalance: decimal.Zero,
@@ -71,20 +72,20 @@ func TestServer_CreateAccount(t *testing.T) {
 		}).Return(uint64(0), errors.New("unexpected error")).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("POST", addr, strings.NewReader(`{
+		resp, err := httpDoWithToken("POST", addr, strings.NewReader(`{
 			"name": "account-name",
 			"icon_oid": "0",
 			"initial_balance": "0"
-		}`), MustLogIn()))
+		}`), MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
 
-		db.accountService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // create account successful
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.accountService.On("Create", "my-id", dbModels.AssetAccount{
+		user := RegisterMockLogIn(db)
+		db.accountService.On("Create", user.ID, dbModels.AssetAccount{
 			Name:           "account-name",
 			IconOID:        0,
 			InitialBalance: decimal.Zero,
@@ -92,15 +93,15 @@ func TestServer_CreateAccount(t *testing.T) {
 		}).Return(uint64(0), nil).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("POST", addr, strings.NewReader(`{
+		resp, err := httpDoWithToken("POST", addr, strings.NewReader(`{
 			"name": "account-name",
 			"icon_oid": "0",
 			"initial_balance": "0"
-		}`), MustLogIn()))
+		}`), MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusOK, resp.StatusCode)
 
-		db.accountService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 }
 
@@ -111,20 +112,20 @@ func TestServer_ListAccounts(t *testing.T) {
 
 	{ // failed to get accounts(unexpected error)
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.accountService.On("List", "my-id").Return(([]dbModels.AssetAccount)(nil), errors.New("unexpected error")).Once()
+		user := RegisterMockLogIn(db)
+		db.accountService.On("List", user.ID).Return(([]dbModels.AssetAccount)(nil), errors.New("unexpected error")).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("GET", addr, nil, MustLogIn()))
+		resp, err := httpDoWithToken("GET", addr, nil, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
 
-		db.accountService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // get accounts successful
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.accountService.On("List", "my-id").Return([]dbModels.AssetAccount{{
+		user := RegisterMockLogIn(db)
+		db.accountService.On("List", user.ID).Return([]dbModels.AssetAccount{{
 			OID:            0,
 			Name:           "account-1",
 			IconOID:        0,
@@ -139,7 +140,7 @@ func TestServer_ListAccounts(t *testing.T) {
 		}}, nil).Once()
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("GET", addr, nil, MustLogIn()))
+		resp, err := httpDoWithToken("GET", addr, nil, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusOK, resp.StatusCode)
 		assert.JSONEq(`[
@@ -158,7 +159,7 @@ func TestServer_ListAccounts(t *testing.T) {
 			}
 		]`, MustGetResponseBodyJSON(resp.Body))
 
-		db.accountService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 }
 
@@ -169,34 +170,38 @@ func TestServer_UpdateAccount(t *testing.T) {
 
 	{ // missing account oid
 		db := NewMockDB()
-		RegisterMockLogIn(db)
+		user := RegisterMockLogIn(db)
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", addr+"/", strings.NewReader(`{
+		resp, err := httpDoWithToken("PUT", addr+"/", strings.NewReader(`{
 			"name": "my-account",
 			"icon_oid": "10",
 			"initial_balance": "7.89"
-		}`), MustLogIn()))
+		}`), MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusBadRequest, resp.StatusCode)
+
+		db.AssertExpectations(t)
 	}
 	{ // invalid account oid
 		db := NewMockDB()
-		RegisterMockLogIn(db)
+		user := RegisterMockLogIn(db)
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", addr+"/abc", strings.NewReader(`{
+		resp, err := httpDoWithToken("PUT", addr+"/abc", strings.NewReader(`{
 			"name": "my-account",
 			"icon_oid": "10",
 			"initial_balance": "7.89"
-		}`), MustLogIn()))
+		}`), MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusBadRequest, resp.StatusCode)
+
+		db.AssertExpectations(t)
 	}
 	{ // failed to update account(unexpected error)
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.accountService.On("Update", "my-id", dbModels.AssetAccount{
+		user := RegisterMockLogIn(db)
+		db.accountService.On("Update", user.ID, dbModels.AssetAccount{
 			OID:            0,
 			Name:           "my-account",
 			IconOID:        10,
@@ -204,20 +209,20 @@ func TestServer_UpdateAccount(t *testing.T) {
 		}).Return(errors.New("unexpected error"))
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", addr+"/0", strings.NewReader(`{
+		resp, err := httpDoWithToken("PUT", addr+"/0", strings.NewReader(`{
 			"name": "my-account",
 			"icon_oid": "10",
 			"initial_balance": "7.89"
-		}`), MustLogIn()))
+		}`), MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
 
-		db.accountService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 	{ // update account successful
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.accountService.On("Update", "my-id", dbModels.AssetAccount{
+		user := RegisterMockLogIn(db)
+		db.accountService.On("Update", user.ID, dbModels.AssetAccount{
 			OID:            0,
 			Name:           "my-account",
 			IconOID:        10,
@@ -225,15 +230,15 @@ func TestServer_UpdateAccount(t *testing.T) {
 		}).Return(nil)
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", addr+"/0", strings.NewReader(`{
+		resp, err := httpDoWithToken("PUT", addr+"/0", strings.NewReader(`{
 			"name": "my-account",
 			"icon_oid": "10",
 			"initial_balance": "7.89"
-		}`), MustLogIn()))
+		}`), MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusOK, resp.StatusCode)
 
-		db.accountService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 }
 
@@ -244,32 +249,36 @@ func TestServer_DeleteAccount(t *testing.T) {
 
 	{ // missing account oid
 		db := NewMockDB()
-		RegisterMockLogIn(db)
+		user := RegisterMockLogIn(db)
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("DELETE", addr+"/", nil, MustLogIn()))
+		resp, err := httpDoWithToken("DELETE", addr+"/", nil, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusBadRequest, resp.StatusCode)
+
+		db.AssertExpectations(t)
 	}
 	{ // invalid account oid
 		db := NewMockDB()
-		RegisterMockLogIn(db)
+		user := RegisterMockLogIn(db)
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("DELETE", addr+"/abc", nil, MustLogIn()))
+		resp, err := httpDoWithToken("DELETE", addr+"/abc", nil, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusBadRequest, resp.StatusCode)
+
+		db.AssertExpectations(t)
 	}
 	{ // delete account successful
 		db := NewMockDB()
-		RegisterMockLogIn(db)
-		db.accountService.On("Delete", "my-id", uint64(99)).Return(nil)
+		user := RegisterMockLogIn(db)
+		db.accountService.On("Delete", user.ID, uint64(99)).Return(nil)
 		myTestServer.db = db
 
-		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("DELETE", addr+"/99", nil, MustLogIn()))
+		resp, err := httpDoWithToken("DELETE", addr+"/99", nil, MustLogIn(user))
 		assert.NoError(err)
 		assert.EqualValues(iris.StatusOK, resp.StatusCode)
 
-		db.accountService.AssertExpectations(t)
+		db.AssertExpectations(t)
 	}
 }
