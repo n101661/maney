@@ -43,5 +43,10 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 func newIrisApplication() *iris.Application {
 	app := iris.Default()
 	app.Validator = validator.New()
+
+	cfg := iris.DefaultConfiguration()
+	cfg.DisablePathCorrection = true
+	cfg.DisablePathCorrectionRedirection = true
+	app.Configure(iris.WithConfiguration(cfg))
 	return app
 }

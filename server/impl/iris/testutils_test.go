@@ -297,6 +297,10 @@ func MustHTTPRequestWithToken(method, url string, body interface{}, token string
 }
 
 func MustHTTPBody(v interface{}) io.Reader {
+	if v == nil {
+		return nil
+	}
+
 	if r, ok := v.(io.Reader); ok {
 		return r
 	}

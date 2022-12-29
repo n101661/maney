@@ -15,8 +15,8 @@ func (s *Server) registerRoutes() {
 	{ // user's accounts
 		user.Post("/accounts", s.CreateAccount)
 		user.Get("/accounts", s.ListAccounts)
-		user.Put("/accounts/{oid:uint64}", s.UpdateAccount)
-		user.Delete("/accounts/{oid:uint64}", s.DeleteAccount)
+		user.Put("/accounts/{oid}", s.UpdateAccount)
+		user.Delete("/accounts/{oid}", s.DeleteAccount)
 	}
 	{ // user's categories
 		user.Post("/categories")

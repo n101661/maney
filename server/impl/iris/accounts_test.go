@@ -163,17 +163,113 @@ func TestServer_ListAccounts(t *testing.T) {
 }
 
 func TestServer_UpdateAccount(t *testing.T) {
-	// assert := assert.New(t)
+	assert := assert.New(t)
 
+	const addr = "http://" + serverAddr + "/users/accounts"
+
+	{ // missing account oid
+		db := NewMockDB()
+		RegisterMockLogIn(db)
+		myTestServer.db = db
+
+		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", addr+"/", strings.NewReader(`{
+			"name": "my-account",
+			"icon_oid": "10",
+			"initial_balance": "7.89"
+		}`), MustLogIn()))
+		assert.NoError(err)
+		assert.EqualValues(iris.StatusBadRequest, resp.StatusCode)
+	}
+	{ // invalid account oid
+		db := NewMockDB()
+		RegisterMockLogIn(db)
+		myTestServer.db = db
+
+		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", addr+"/abc", strings.NewReader(`{
+			"name": "my-account",
+			"icon_oid": "10",
+			"initial_balance": "7.89"
+		}`), MustLogIn()))
+		assert.NoError(err)
+		assert.EqualValues(iris.StatusBadRequest, resp.StatusCode)
+	}
 	{ // failed to update account(unexpected error)
+		db := NewMockDB()
+		RegisterMockLogIn(db)
+		db.accountService.On("Update", "my-id", dbModels.AssetAccount{
+			OID:            0,
+			Name:           "my-account",
+			IconOID:        10,
+			InitialBalance: MustDecimalFromString("7.89"),
+		}).Return(errors.New("unexpected error"))
+		myTestServer.db = db
 
+		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", addr+"/0", strings.NewReader(`{
+			"name": "my-account",
+			"icon_oid": "10",
+			"initial_balance": "7.89"
+		}`), MustLogIn()))
+		assert.NoError(err)
+		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
+
+		db.accountService.AssertExpectations(t)
 	}
 	{ // update account successful
+		db := NewMockDB()
+		RegisterMockLogIn(db)
+		db.accountService.On("Update", "my-id", dbModels.AssetAccount{
+			OID:            0,
+			Name:           "my-account",
+			IconOID:        10,
+			InitialBalance: MustDecimalFromString("7.89"),
+		}).Return(nil)
+		myTestServer.db = db
 
+		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("PUT", addr+"/0", strings.NewReader(`{
+			"name": "my-account",
+			"icon_oid": "10",
+			"initial_balance": "7.89"
+		}`), MustLogIn()))
+		assert.NoError(err)
+		assert.EqualValues(iris.StatusOK, resp.StatusCode)
+
+		db.accountService.AssertExpectations(t)
 	}
 }
 
 func TestServer_DeleteAccount(t *testing.T) {
-	// assert := assert.New(t)
+	assert := assert.New(t)
 
+	const addr = "http://" + serverAddr + "/users/accounts"
+
+	{ // missing account oid
+		db := NewMockDB()
+		RegisterMockLogIn(db)
+		myTestServer.db = db
+
+		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("DELETE", addr+"/", nil, MustLogIn()))
+		assert.NoError(err)
+		assert.EqualValues(iris.StatusBadRequest, resp.StatusCode)
+	}
+	{ // invalid account oid
+		db := NewMockDB()
+		RegisterMockLogIn(db)
+		myTestServer.db = db
+
+		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("DELETE", addr+"/abc", nil, MustLogIn()))
+		assert.NoError(err)
+		assert.EqualValues(iris.StatusBadRequest, resp.StatusCode)
+	}
+	{ // delete account successful
+		db := NewMockDB()
+		RegisterMockLogIn(db)
+		db.accountService.On("Delete", "my-id", uint64(99)).Return(nil)
+		myTestServer.db = db
+
+		resp, err := http.DefaultClient.Do(MustHTTPRequestWithToken("DELETE", addr+"/99", nil, MustLogIn()))
+		assert.NoError(err)
+		assert.EqualValues(iris.StatusOK, resp.StatusCode)
+
+		db.accountService.AssertExpectations(t)
+	}
 }
