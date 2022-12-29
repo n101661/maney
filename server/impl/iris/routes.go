@@ -21,33 +21,33 @@ func (s *Server) registerRoutes() {
 	{ // user's categories
 		user.Post("/categories")
 		user.Get("/categories")
-		user.Put("/categories/{oid:uint64}")
-		user.Delete("/categories/{oid:uint64}")
+		user.Put("/categories/{oid}")
+		user.Delete("/categories/{oid}")
 	}
 	{ // user's shops
 		user.Post("/shops")
 		user.Get("/shops")
-		user.Put("/shops/{oid:uint64}")
-		user.Delete("/shops/{oid:uint64}")
+		user.Put("/shops/{oid}")
+		user.Delete("/shops/{oid}")
 	}
 	{ // user's fees
 		user.Post("/fees")
 		user.Get("/fees")
-		user.Put("/fees/{oid:uint64}")
-		user.Delete("/fees/{oid:uint64}")
+		user.Put("/fees/{oid}")
+		user.Delete("/fees/{oid}")
 	}
 	{ // user's daily items
 		user.Post("/daily-items")
 		user.Get("/daily-items")
-		user.Put("/daily-items/{oid:uint64}")
-		user.Delete("/daily-items/{oid:uint64}")
+		user.Put("/daily-items/{oid}")
+		user.Delete("/daily-items/{oid}")
 		user.Get("/daily-items/export")
 		user.Post("/daily-items/import")
 	}
 	{ // user's repeating items
 		user.Post("/repeating-items")
 		user.Get("/repeating-items")
-		user.Put("/repeating-items/{oid:uint64}")
-		user.Delete("/repeating-items/{oid:uint64}")
+		user.Put("/repeating-items/{oid}")
+		user.Delete("/repeating-items/{oid}")
 	}
 }
