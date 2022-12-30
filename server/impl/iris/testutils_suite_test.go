@@ -1,10 +1,14 @@
 package iris
 
 import (
+	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	dbModels "github.com/n101661/maney/database/models"
 )
 
 type LogInAndDoSuiteConfig struct {
@@ -41,27 +45,59 @@ func NewLogInAndDoSuite(cfg LogInAndDoSuiteConfig) *LogInAndDoSuite {
 }
 
 func (s *LogInAndDoSuite) TestDo() {
-	resp, err := httpDoWithToken(
-		s.config.HTTPRequest.Method,
+	r, err := http.NewRequest(s.config.HTTPRequest.Method,
 		s.config.HTTPRequest.URL,
 		strings.NewReader(s.config.HTTPRequest.Body),
-		s.token,
 	)
-	assert.NoError(s.T(), err)
+	if err != nil {
+		panic(err)
+	}
+
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Authorization", "Bearer "+s.token)
+
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		panic(err)
+	}
 	assert.Equal(s.T(), s.config.HTTPExpectation.StatusCode, resp.StatusCode)
 	if expected := s.config.HTTPExpectation.BodyJSON; expected != "" {
-		assert.JSONEq(s.T(), expected, MustGetResponseBodyJSON(resp.Body))
+		assert.JSONEq(s.T(), expected, mustGetResponseBodyJSON(resp.Body))
 	}
 }
 
 func (s *LogInAndDoSuite) BeforeTest(suiteName, testName string) {
-	user := RegisterMockLogIn(s.db)
+	var (
+		userID       = "my-id"
+		userName     = "tester"
+		userPassword = myTestPassword
+	)
+
+	s.db.userService.On("Get", userID).Return(
+		&dbModels.User{
+			ID:       userID,
+			Name:     userName,
+			Password: userPassword.Encrypted,
+		}, nil,
+	).Once()
 	if s.config.BeforeTest != nil {
-		s.config.BeforeTest(user.ID, s.db)
+		s.config.BeforeTest(userID, s.db)
 	}
 	myTestServer.db = s.db
 
-	s.token = MustLogIn(user)
+	{ // log in
+		resp, err := http.Post("http://"+serverAddr+"/log-in", "application/json", strings.NewReader(fmt.Sprintf(`{
+			"id": "%s",
+			"password": "%s"
+		}`, userID, userPassword.Raw)))
+		if err != nil {
+			panic(err)
+		}
+
+		cookie := resp.Header.Get("Set-Cookie")
+
+		s.token = cookie[6:strings.Index(cookie, ";")]
+	}
 }
 
 func (s *LogInAndDoSuite) AfterTest(suiteName, testName string) {
