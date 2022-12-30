@@ -7,6 +7,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
@@ -198,83 +199,88 @@ func TestServer_SignUp(t *testing.T) {
 }
 
 func TestServer_UpdateConfig(t *testing.T) {
-	assert := assert.New(t)
+	const addr = "http://" + serverAddr + "/users/config"
 
 	{ // failed to update config(unexpected error)
-		db := NewMockDB()
-		user := RegisterMockLogIn(db)
-		db.userService.On("UpdateConfig", user.ID, dbModels.UserConfig{
-			CompareItemsInDifferentShop: false,
-			CompareItemsInSameShop:      true,
-		}).Return(errors.New("unexpected error")).Once()
-		myTestServer.db = db
-
-		resp, err := httpDoWithToken("PUT", "http://"+serverAddr+"/users/config", models.UserConfigRequestBody{
-			CompareItemsInDifferentShop: false,
-			CompareItemsInSameShop:      true,
-		}, MustLogIn(user))
-		assert.NoError(err)
-		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
-
-		db.AssertExpectations(t)
+		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			BeforeTest: func(userID string, db *mockDB) {
+				db.userService.On("UpdateConfig", userID, dbModels.UserConfig{
+					CompareItemsInDifferentShop: false,
+					CompareItemsInSameShop:      true,
+				}).Return(errors.New("unexpected error")).Once()
+			},
+			HTTPRequest: HTTPRequest{
+				Method: "PUT",
+				URL:    addr,
+				Body: `{
+					"compare_items_in_different_shop": false,
+					"compare_items_in_same_shop": true
+				}`,
+			},
+			HTTPExpectation: HTTPExpectation{
+				StatusCode: iris.StatusInternalServerError,
+			},
+		}))
 	}
 	{ // update config successful
-		db := NewMockDB()
-		user := RegisterMockLogIn(db)
-		db.userService.On("UpdateConfig", user.ID, dbModels.UserConfig{
-			CompareItemsInDifferentShop: false,
-			CompareItemsInSameShop:      true,
-		}).Return(nil).Once()
-		myTestServer.db = db
-
-		resp, err := httpDoWithToken("PUT", "http://"+serverAddr+"/users/config", models.UserConfigRequestBody{
-			CompareItemsInDifferentShop: false,
-			CompareItemsInSameShop:      true,
-		}, MustLogIn(user))
-		assert.NoError(err)
-		assert.EqualValues(iris.StatusOK, resp.StatusCode)
-
-		db.AssertExpectations(t)
+		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			BeforeTest: func(userID string, db *mockDB) {
+				db.userService.On("UpdateConfig", userID, dbModels.UserConfig{
+					CompareItemsInDifferentShop: false,
+					CompareItemsInSameShop:      true,
+				}).Return(nil).Once()
+			},
+			HTTPRequest: HTTPRequest{
+				Method: "PUT",
+				URL:    addr,
+				Body: `{
+					"compare_items_in_different_shop": false,
+					"compare_items_in_same_shop": true
+				}`,
+			},
+			HTTPExpectation: HTTPExpectation{
+				StatusCode: iris.StatusOK,
+			},
+		}))
 	}
 }
 
 func TestServer_GetConfig(t *testing.T) {
-	assert := assert.New(t)
+	const addr = "http://" + serverAddr + "/users/config"
 
 	{ // failed to get config(unexpected error)
-		db := NewMockDB()
-		user := RegisterMockLogIn(db)
-		db.userService.On("GetConfig", user.ID).Return(dbModels.UserConfig{}, errors.New("unexpected error")).Once()
-		myTestServer.db = db
-
-		resp, err := httpDoWithToken("GET", "http://"+serverAddr+"/users/config", nil, MustLogIn(user))
-		assert.NoError(err)
-		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
-
-		db.AssertExpectations(t)
+		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			BeforeTest: func(userID string, db *mockDB) {
+				db.userService.On("GetConfig", userID).Return(dbModels.UserConfig{}, errors.New("unexpected error")).Once()
+			},
+			HTTPRequest: HTTPRequest{
+				Method: "GET",
+				URL:    addr,
+			},
+			HTTPExpectation: HTTPExpectation{
+				StatusCode: iris.StatusInternalServerError,
+			},
+		}))
 	}
 	{ // get config successful
-		type response struct {
-			CompareItemsInDifferentShop bool `json:"compare_items_in_different_shop"`
-			CompareItemsInSameShop      bool `json:"compare_items_in_same_shop"`
-		}
-
-		db := NewMockDB()
-		user := RegisterMockLogIn(db)
-		db.userService.On("GetConfig", user.ID).Return(dbModels.UserConfig{
-			CompareItemsInDifferentShop: true,
-			CompareItemsInSameShop:      false,
-		}, nil).Once()
-		myTestServer.db = db
-
-		resp, err := httpDoWithToken("GET", "http://"+serverAddr+"/users/config", nil, MustLogIn(user))
-		assert.NoError(err)
-		assert.EqualValues(iris.StatusOK, resp.StatusCode)
-		assert.Equal(&response{
-			CompareItemsInDifferentShop: true,
-			CompareItemsInSameShop:      false,
-		}, MustGetResponseBody[response](resp.Body))
-
-		db.AssertExpectations(t)
+		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			BeforeTest: func(userID string, db *mockDB) {
+				db.userService.On("GetConfig", userID).Return(dbModels.UserConfig{
+					CompareItemsInDifferentShop: true,
+					CompareItemsInSameShop:      false,
+				}, nil).Once()
+			},
+			HTTPRequest: HTTPRequest{
+				Method: "GET",
+				URL:    addr,
+			},
+			HTTPExpectation: HTTPExpectation{
+				StatusCode: iris.StatusOK,
+				BodyJSON: `{
+					"compare_items_in_different_shop": true,
+					"compare_items_in_same_shop": false
+				}`,
+			},
+		}))
 	}
 }
