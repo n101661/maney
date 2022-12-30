@@ -12,6 +12,8 @@ import (
 )
 
 type LogInAndDoSuiteConfig struct {
+	Name string
+
 	BeforeTest func(userID string, db *mockDB)
 
 	HTTPRequest     HTTPRequest
@@ -38,6 +40,10 @@ type LogInAndDoSuite struct {
 }
 
 func NewLogInAndDoSuite(cfg LogInAndDoSuiteConfig) *LogInAndDoSuite {
+	if cfg.Name == "" {
+		panic("missing name")
+	}
+
 	return &LogInAndDoSuite{
 		db:     NewMockDB(),
 		config: cfg,
@@ -60,9 +66,9 @@ func (s *LogInAndDoSuite) TestDo() {
 	if err != nil {
 		panic(err)
 	}
-	assert.Equal(s.T(), s.config.HTTPExpectation.StatusCode, resp.StatusCode)
+	assert.Equal(s.T(), s.config.HTTPExpectation.StatusCode, resp.StatusCode, s.config.Name)
 	if expected := s.config.HTTPExpectation.BodyJSON; expected != "" {
-		assert.JSONEq(s.T(), expected, mustGetResponseBodyJSON(resp.Body))
+		assert.JSONEq(s.T(), expected, mustGetResponseBodyJSON(resp.Body), s.config.Name)
 	}
 }
 

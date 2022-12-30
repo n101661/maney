@@ -201,8 +201,9 @@ func TestServer_SignUp(t *testing.T) {
 func TestServer_UpdateConfig(t *testing.T) {
 	const addr = "http://" + serverAddr + "/users/config"
 
-	{ // failed to update config(unexpected error)
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "failed to update config(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.userService.On("UpdateConfig", userID, dbModels.UserConfig{
 					CompareItemsInDifferentShop: false,
@@ -222,8 +223,9 @@ func TestServer_UpdateConfig(t *testing.T) {
 			},
 		}))
 	}
-	{ // update config successful
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "update config successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.userService.On("UpdateConfig", userID, dbModels.UserConfig{
 					CompareItemsInDifferentShop: false,
@@ -248,8 +250,9 @@ func TestServer_UpdateConfig(t *testing.T) {
 func TestServer_GetConfig(t *testing.T) {
 	const addr = "http://" + serverAddr + "/users/config"
 
-	{ // failed to get config(unexpected error)
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "failed to get config(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.userService.On("GetConfig", userID).Return(dbModels.UserConfig{}, errors.New("unexpected error")).Once()
 			},
@@ -262,8 +265,9 @@ func TestServer_GetConfig(t *testing.T) {
 			},
 		}))
 	}
-	{ // get config successful
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "get config successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.userService.On("GetConfig", userID).Return(dbModels.UserConfig{
 					CompareItemsInDifferentShop: true,

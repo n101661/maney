@@ -15,30 +15,26 @@ import (
 func TestServer_CreateAccount(t *testing.T) {
 	const addr = "http://" + serverAddr + "/users/accounts"
 
-	{ // missing required field
-		suites := []suite.TestingSuite{
-			NewLogInAndDoSuite(LogInAndDoSuiteConfig{
-				HTTPRequest: HTTPRequest{
-					Method: "POST",
-					URL:    addr,
-					Body: `{
-						"name": "",
-						"icon_oid": "0",
-						"initial_balance": "0"
-					}`,
-				},
-				HTTPExpectation: HTTPExpectation{
-					StatusCode: iris.StatusBadRequest,
-				},
-			}),
-		}
-
-		for _, s := range suites {
-			suite.Run(t, s)
-		}
-	}
-	{ // the account has already existed
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "missing name",
+			HTTPRequest: HTTPRequest{
+				Method: "POST",
+				URL:    addr,
+				Body: `{
+					"name": "",
+					"icon_oid": "0",
+					"initial_balance": "0"
+				}`,
+			},
+			HTTPExpectation: HTTPExpectation{
+				StatusCode: iris.StatusBadRequest,
+			},
+		}))
+	}
+	{
+		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "the account has already existed",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Create", userID, dbModels.AssetAccount{
 					Name:           "account-name",
@@ -61,8 +57,9 @@ func TestServer_CreateAccount(t *testing.T) {
 			},
 		}))
 	}
-	{ // failed to create account(unexpected error)
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "failed to create account(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Create", userID, dbModels.AssetAccount{
 					Name:           "account-name",
@@ -85,8 +82,9 @@ func TestServer_CreateAccount(t *testing.T) {
 			},
 		}))
 	}
-	{ // create account successful
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "create account successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Create", userID, dbModels.AssetAccount{
 					Name:           "account-name",
@@ -114,8 +112,9 @@ func TestServer_CreateAccount(t *testing.T) {
 func TestServer_ListAccounts(t *testing.T) {
 	const addr = "http://" + serverAddr + "/users/accounts"
 
-	{ // failed to get accounts(unexpected error)
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "failed to get accounts(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("List", userID).Return(([]dbModels.AssetAccount)(nil), errors.New("unexpected error")).Once()
 			},
@@ -133,8 +132,9 @@ func TestServer_ListAccounts(t *testing.T) {
 			},
 		}))
 	}
-	{ // get accounts successful
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "get accounts successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("List", userID).Return([]dbModels.AssetAccount{{
 					OID:            0,
@@ -184,8 +184,9 @@ func TestServer_ListAccounts(t *testing.T) {
 func TestServer_UpdateAccount(t *testing.T) {
 	const addr = "http://" + serverAddr + "/users/accounts"
 
-	{ // missing account oid
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "missing account oid",
 			HTTPRequest: HTTPRequest{
 				Method: "PUT",
 				URL:    addr + "/",
@@ -200,8 +201,9 @@ func TestServer_UpdateAccount(t *testing.T) {
 			},
 		}))
 	}
-	{ // invalid account oid
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "invalid account oid",
 			HTTPRequest: HTTPRequest{
 				Method: "PUT",
 				URL:    addr + "/abc",
@@ -216,8 +218,9 @@ func TestServer_UpdateAccount(t *testing.T) {
 			},
 		}))
 	}
-	{ // failed to update account(unexpected error)
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "failed to update account(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Update", userID, dbModels.AssetAccount{
 					OID:            0,
@@ -240,8 +243,9 @@ func TestServer_UpdateAccount(t *testing.T) {
 			},
 		}))
 	}
-	{ // update account successful
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "update account successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Update", userID, dbModels.AssetAccount{
 					OID:            0,
@@ -269,8 +273,9 @@ func TestServer_UpdateAccount(t *testing.T) {
 func TestServer_DeleteAccount(t *testing.T) {
 	const addr = "http://" + serverAddr + "/users/accounts"
 
-	{ // missing account oid
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "missing account oid",
 			HTTPRequest: HTTPRequest{
 				Method: "DELETE",
 				URL:    addr + "/",
@@ -280,8 +285,9 @@ func TestServer_DeleteAccount(t *testing.T) {
 			},
 		}))
 	}
-	{ // invalid account oid
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "invalid account oid",
 			HTTPRequest: HTTPRequest{
 				Method: "DELETE",
 				URL:    addr + "/abc",
@@ -291,8 +297,9 @@ func TestServer_DeleteAccount(t *testing.T) {
 			},
 		}))
 	}
-	{ // delete account successful
+	{
 		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+			Name: "delete account successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Delete", userID, uint64(99)).Return(nil)
 			},
