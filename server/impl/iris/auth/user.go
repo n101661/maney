@@ -6,9 +6,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func encryptPassword(val string) ([]byte, error) {
-	pwd := encrypt([]byte(val))
-	return bcrypt.GenerateFromPassword(pwd, 8)
+func newEncryptPassword(saltRound int) EncryptPasswordFunc {
+	return func(val string) ([]byte, error) {
+		pwd := encrypt([]byte(val))
+		return bcrypt.GenerateFromPassword(pwd, saltRound)
+	}
 }
 
 func validatePassword(expected []byte, actual []byte) error {

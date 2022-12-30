@@ -23,12 +23,29 @@ type Authentication struct {
 	ValidatePassword ValidatePasswordFunc
 }
 
-func NewAuthentication(secretKey []byte) *Authentication {
+func NewAuthentication(secretKey []byte, opts ...authenticationOption) *Authentication {
+	var o authenticationOptions
+	for _, opt := range opts {
+		opt(&o)
+	}
+
 	return &Authentication{
 		GenerateToken:    newGenerateTokenFunc(secretKey),
 		ValidateToken:    newValidateTokenFunc(secretKey),
 		GetTokenClaims:   getTokenClaims,
-		EncryptPassword:  encryptPassword,
+		EncryptPassword:  newEncryptPassword(o.passwordSaltRound),
 		ValidatePassword: validatePassword,
 	}
+}
+
+type authenticationOption func(*authenticationOptions)
+
+func WithPasswordSaltRound(round int) authenticationOption {
+	return func(o *authenticationOptions) {
+		o.passwordSaltRound = round
+	}
+}
+
+type authenticationOptions struct {
+	passwordSaltRound int
 }

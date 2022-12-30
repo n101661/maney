@@ -10,7 +10,8 @@ import (
 
 type Config struct {
 	// SecretKey is for JWS.
-	SecretKey []byte
+	SecretKey         []byte
+	PasswordSaltRound int
 }
 
 type Server struct {
@@ -22,9 +23,12 @@ type Server struct {
 
 func NewServer(cfg Config) *Server {
 	s := &Server{
-		app:  newIrisApplication(),
-		auth: auth.NewAuthentication(cfg.SecretKey),
-		db:   nil, // TODO
+		app: newIrisApplication(),
+		auth: auth.NewAuthentication(
+			cfg.SecretKey,
+			auth.WithPasswordSaltRound(cfg.PasswordSaltRound),
+		),
+		db: nil, // TODO
 	}
 
 	s.registerRoutes()
