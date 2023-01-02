@@ -7,7 +7,6 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
@@ -198,11 +197,11 @@ func TestServer_SignUp(t *testing.T) {
 	}
 }
 
-func TestServer_UpdateConfig(t *testing.T) {
+func (s *LogInAndDoSuite) TestServer_UpdateConfig() {
 	const addr = "http://" + serverAddr + "/users/config"
 
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "failed to update config(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.userService.On("UpdateConfig", userID, dbModels.UserConfig{
@@ -221,10 +220,10 @@ func TestServer_UpdateConfig(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusInternalServerError,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "update config successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.userService.On("UpdateConfig", userID, dbModels.UserConfig{
@@ -243,15 +242,15 @@ func TestServer_UpdateConfig(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusOK,
 			},
-		}))
+		})
 	}
 }
 
-func TestServer_GetConfig(t *testing.T) {
+func (s *LogInAndDoSuite) TestServer_GetConfig() {
 	const addr = "http://" + serverAddr + "/users/config"
 
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "failed to get config(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.userService.On("GetConfig", userID).Return(dbModels.UserConfig{}, errors.New("unexpected error")).Once()
@@ -263,10 +262,10 @@ func TestServer_GetConfig(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusInternalServerError,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "get config successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.userService.On("GetConfig", userID).Return(dbModels.UserConfig{
@@ -285,6 +284,6 @@ func TestServer_GetConfig(t *testing.T) {
 					"compare_items_in_same_shop": false
 				}`,
 			},
-		}))
+		})
 	}
 }

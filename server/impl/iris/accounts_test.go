@@ -2,21 +2,19 @@ package iris
 
 import (
 	"errors"
-	"testing"
 
 	"github.com/kataras/iris/v12"
 	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
 )
 
-func TestServer_CreateAccount(t *testing.T) {
+func (s *LogInAndDoSuite) TestServer_CreateAccount() {
 	const addr = "http://" + serverAddr + "/users/accounts"
 
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "missing name",
 			HTTPRequest: HTTPRequest{
 				Method: "POST",
@@ -30,10 +28,10 @@ func TestServer_CreateAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusBadRequest,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "the account has already existed",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Create", userID, dbModels.AssetAccount{
@@ -55,10 +53,10 @@ func TestServer_CreateAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusConflict,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "failed to create account(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Create", userID, dbModels.AssetAccount{
@@ -80,10 +78,10 @@ func TestServer_CreateAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusInternalServerError,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "create account successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Create", userID, dbModels.AssetAccount{
@@ -105,15 +103,15 @@ func TestServer_CreateAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusOK,
 			},
-		}))
+		})
 	}
 }
 
-func TestServer_ListAccounts(t *testing.T) {
+func (s *LogInAndDoSuite) TestServer_ListAccounts() {
 	const addr = "http://" + serverAddr + "/users/accounts"
 
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "failed to get accounts(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("List", userID).Return(([]dbModels.AssetAccount)(nil), errors.New("unexpected error")).Once()
@@ -130,10 +128,10 @@ func TestServer_ListAccounts(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusInternalServerError,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "get accounts successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("List", userID).Return([]dbModels.AssetAccount{{
@@ -177,15 +175,15 @@ func TestServer_ListAccounts(t *testing.T) {
 					}
 				]`,
 			},
-		}))
+		})
 	}
 }
 
-func TestServer_UpdateAccount(t *testing.T) {
+func (s *LogInAndDoSuite) TestServer_UpdateAccount() {
 	const addr = "http://" + serverAddr + "/users/accounts"
 
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "missing account oid",
 			HTTPRequest: HTTPRequest{
 				Method: "PUT",
@@ -199,10 +197,10 @@ func TestServer_UpdateAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusBadRequest,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "invalid account oid",
 			HTTPRequest: HTTPRequest{
 				Method: "PUT",
@@ -216,10 +214,10 @@ func TestServer_UpdateAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusBadRequest,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "failed to update account(unexpected error)",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Update", userID, dbModels.AssetAccount{
@@ -241,10 +239,10 @@ func TestServer_UpdateAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusInternalServerError,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "update account successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Update", userID, dbModels.AssetAccount{
@@ -266,15 +264,15 @@ func TestServer_UpdateAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusOK,
 			},
-		}))
+		})
 	}
 }
 
-func TestServer_DeleteAccount(t *testing.T) {
+func (s *LogInAndDoSuite) TestServer_DeleteAccount() {
 	const addr = "http://" + serverAddr + "/users/accounts"
 
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "missing account oid",
 			HTTPRequest: HTTPRequest{
 				Method: "DELETE",
@@ -283,10 +281,10 @@ func TestServer_DeleteAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusBadRequest,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "invalid account oid",
 			HTTPRequest: HTTPRequest{
 				Method: "DELETE",
@@ -295,10 +293,10 @@ func TestServer_DeleteAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusBadRequest,
 			},
-		}))
+		})
 	}
 	{
-		suite.Run(t, NewLogInAndDoSuite(LogInAndDoSuiteConfig{
+		s.RunTest(Test{
 			Name: "delete account successful",
 			BeforeTest: func(userID string, db *mockDB) {
 				db.accountService.On("Delete", userID, uint64(99)).Return(nil)
@@ -310,6 +308,6 @@ func TestServer_DeleteAccount(t *testing.T) {
 			HTTPExpectation: HTTPExpectation{
 				StatusCode: iris.StatusOK,
 			},
-		}))
+		})
 	}
 }
