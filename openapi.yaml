@@ -3,6 +3,7 @@ info:
   title: maney
   version: v0.0.1
 tags:
+  - name: Auth
   - name: User
   - name: Account
   - name: Category
@@ -11,6 +12,21 @@ tags:
   - name: Daily Item
   - name: Repeating Item
 paths:
+  /auth/refresh:
+    post:
+      summary: refresh token
+      tags: ["Auth"]
+      operationId: AuthRefresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRefreshRequest"
+      responses:
+        200:
+          $ref: "#/components/responses/AuthRefreshResponse"
+        401:
+          $ref: "#/components/responses/DefaultResponse"
   /log-in:
     post:
       summary: user logs in
@@ -615,6 +631,24 @@ components:
       required:
         - item
         - frequency
+    AuthRefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+        - "refresh_token"
   responses:
     DefaultResponse:
+      description: ""
+    AuthRefreshResponse:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              access_token:
+                type: string
+              refresh_token:
+                type: string
       description: ""
