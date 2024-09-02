@@ -9,8 +9,7 @@ tags:
   - name: Category
   - name: Shop
   - name: Fee
-  - name: Daily Item
-  - name: Repeating Item
+  - name: Item
 paths:
   /auth/refresh:
     post:
@@ -30,7 +29,7 @@ paths:
   /login:
     post:
       summary: user login
-      tags: ["User"]
+      tags: ["Auth", "User"]
       operationId: Login
       requestBody:
         content:
@@ -51,7 +50,7 @@ paths:
   /logout:
     post:
       summary: user logout
-      tags: ["User"]
+      tags: ["Auth", "User"]
       operationId: Logout
       responses:
         default:
@@ -59,7 +58,7 @@ paths:
   /sign-up:
     post:
       summary: user signs up
-      tags: ["User"]
+      tags: ["Auth", "User"]
       operationId: SignUp
       requestBody:
         content:
@@ -324,7 +323,7 @@ paths:
           $ref: "#/components/responses/DefaultResponse"
   /users/daily-items:
     post:
-      tags: ["Daily Item"]
+      tags: ["Item"]
       operationId: CreateDailyItem
       requestBody:
         content:
@@ -335,7 +334,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultResponse"
     get:
-      tags: ["Daily Item"]
+      tags: ["Item"]
       operationId: ListUserDailyItems
       parameters:
         - name: date
@@ -361,7 +360,7 @@ paths:
         schema:
           $ref: "#/components/schemas/OID"
     put:
-      tags: ["Daily Item"]
+      tags: ["Item"]
       operationId: UpdateDailyItem
       requestBody:
         content:
@@ -372,14 +371,14 @@ paths:
         default:
           $ref: "#/components/responses/DefaultResponse"
     delete:
-      tags: ["Daily Item"]
+      tags: ["Item"]
       operationId: DeleteDailyItem
       responses:
         default:
           $ref: "#/components/responses/DefaultResponse"
   /users/daily-items/export:
     get:
-      tags: ["Daily Item"]
+      tags: ["Item"]
       operationId: ExportDailyItems
       parameters:
         - name: format
@@ -408,7 +407,7 @@ paths:
                   wrapped: true
   /users/daily-items/import:
     post:
-      tags: ["Daily Item"]
+      tags: ["Item"]
       operationId: ImportDailyItems
       requestBody:
         content:
@@ -430,7 +429,7 @@ paths:
           $ref: "#/components/responses/DefaultResponse"
   /users/repeating-items:
     post:
-      tags: ["Repeating Item"]
+      tags: ["Item"]
       operationId: CreateRepeatingItem
       requestBody:
         content:
@@ -442,7 +441,7 @@ paths:
           $ref: "#/components/responses/DefaultResponse"
     get:
       summary: list all user's repeating items
-      tags: ["Repeating Item"]
+      tags: ["Item"]
       operationId: ListUserRepeatingItems
       responses:
         200:
@@ -461,7 +460,7 @@ paths:
         schema:
           $ref: "#/components/schemas/OID"
     put:
-      tags: ["Repeating Item"]
+      tags: ["Item"]
       operationId: UpdateRepeatingItem
       requestBody:
         content:
@@ -472,7 +471,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultResponse"
     delete:
-      tags: ["Repeating Item"]
+      tags: ["Item"]
       operationId: DeleteRepeatingItem
       responses:
         default:
