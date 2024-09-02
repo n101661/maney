@@ -16,15 +16,15 @@ paths:
     post:
       summary: refresh token
       tags: ["Auth"]
-      operationId: AuthRefresh
+      operationId: RefreshAuth
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AuthRefreshRequest"
+              $ref: "#/components/schemas/RefreshAuthRequest"
       responses:
         200:
-          $ref: "#/components/responses/AuthRefreshResponse"
+          $ref: "#/components/responses/RefreshAuthResponse"
         401:
           $ref: "#/components/responses/DefaultResponse"
   /login:
@@ -631,7 +631,7 @@ components:
       required:
         - item
         - frequency
-    AuthRefreshRequest:
+    RefreshAuthRequest:
       type: object
       properties:
         refresh_token:
@@ -641,7 +641,7 @@ components:
   responses:
     DefaultResponse:
       description: ""
-    AuthRefreshResponse:
+    RefreshAuthResponse:
       content:
         application/json:
           schema:
