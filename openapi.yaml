@@ -2,6 +2,8 @@ openapi: 3.0.0
 info:
   title: maney
   version: v0.0.1
+security:
+  - BearerAuth: []
 tags:
   - name: Auth
   - name: User
@@ -13,73 +15,60 @@ tags:
 paths:
   /auth/refresh:
     post:
-      summary: refresh token
+      summary: Refresh token
       tags: ["Auth"]
       operationId: RefreshAuth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RefreshAuthRequest"
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/RefreshToken"
       responses:
         200:
-          $ref: "#/components/responses/RefreshAuthResponse"
+          $ref: "#/components/responses/AuthenticationResponse"
         401:
-          $ref: "#/components/responses/DefaultResponse"
+          $ref: "#/components/responses/EmptyResponse"
   /login:
     post:
       summary: user login
       tags: ["Auth", "User"]
       operationId: Login
+      security: []
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                id:
-                  type: string
-                password:
-                  type: string
-              required:
-                - id
-                - password
+              $ref: "#/components/schemas/LoginRequest"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/AuthenticationResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
   /logout:
     post:
       summary: user logout
       tags: ["Auth", "User"]
       operationId: Logout
+      parameters:
+        - $ref: "#/components/parameters/RefreshToken"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/LogoutResponse"
   /sign-up:
     post:
       summary: user signs up
       tags: ["Auth", "User"]
       operationId: SignUp
+      security: []
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                id:
-                  type: string
-                password:
-                  type: string
-                name:
-                  type: string
-              required:
-                - id
-                - password
-                - name
+              $ref: "#/components/schemas/SignUpRequest"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-  /users/config:
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/config:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
     put:
       summary: update user config
       tags: ["User"]
@@ -90,8 +79,10 @@ paths:
             schema:
               $ref: "#/components/schemas/UserConfig"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     get:
       tags: ["User"]
       operationId: GetUserConfig
@@ -102,7 +93,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserConfig"
-  /users/accounts:
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/accounts:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
     post:
       summary: create an account for user
       tags: ["Account"]
@@ -111,20 +106,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Account"
+              $ref: "#/components/schemas/BasicAccount"
       responses:
         200:
-          description: ""
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ObjectOID"
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+          $ref: "#/components/responses/ObjectId"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     get:
       summary: list all user's accounts
       tags: ["Account"]
-      operationId: ListUserAccounts
+      operationId: ListAccounts
       responses:
         200:
           description: success
@@ -133,20 +124,17 @@ paths:
               schema:
                 type: array
                 items:
-                  allOf:
-                    - $ref: "#/components/schemas/ObjectOID"
-                    - $ref: "#/components/schemas/Account"
-                    - type: object
-                      properties:
-                        balance:
-                          $ref: "#/components/schemas/Decimal"
-  /users/accounts/{account-oid}:
+                  $ref: "#/components/schemas/Account"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/accounts/{accountId}:
     parameters:
-      - name: account-oid
+      - $ref: "#/components/parameters/UserId"
+      - name: accountId
         in: path
         required: true
         schema:
-          $ref: "#/components/schemas/OID"
+          $ref: "#/components/schemas/Id"
     put:
       summary: update account
       tags: ["Account"]
@@ -155,18 +143,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Account"
+              $ref: "#/components/schemas/BasicAccount"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     delete:
       summary: delete account
       tags: ["Account"]
       operationId: DeleteAccount
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-  /users/categories:
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/categories:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
     post:
       summary: create category
       tags: ["Category"]
@@ -175,14 +169,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Category"
+              $ref: "#/components/schemas/CreatingCategory"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/ObjectId"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     get:
       summary: list all user's categories
       tags: ["Category"]
-      operationId: ListUserCategories
+      operationId: ListCategories
       parameters:
         - name: type
           in: query
@@ -197,13 +193,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Category"
-  /users/categories/{category-oid}:
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/categories/{categoryId}:
     parameters:
-      - name: category-oid
+      - $ref: "#/components/parameters/UserId"
+      - name: categoryId
         in: path
         required: true
         schema:
-          $ref: "#/components/schemas/OID"
+          $ref: "#/components/schemas/Id"
     put:
       summary: update category
       tags: ["Category"]
@@ -212,18 +211,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Category"
+              $ref: "#/components/schemas/BasicCategory"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     delete:
       summary: delete category
       tags: ["Category"]
       operationId: DeleteCategory
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-  /users/shops:
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/shops:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
     post:
       tags: ["Shop"]
       operationId: CreateShop
@@ -231,14 +236,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Shop"
+              $ref: "#/components/schemas/BasicShop"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/ObjectId"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     get:
       summary: list all user's shops
       tags: ["Shop"]
-      operationId: ListUserShops
+      operationId: ListShops
       responses:
         200:
           description: success
@@ -248,13 +255,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Shop"
-  /users/shops/{shop-oid}:
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/shops/{shopId}:
     parameters:
-      - name: shop-oid
+      - $ref: "#/components/parameters/UserId"
+      - name: shopId
         in: path
         required: true
         schema:
-          $ref: "#/components/schemas/OID"
+          $ref: "#/components/schemas/Id"
     put:
       tags: ["Shop"]
       operationId: UpdateShop
@@ -262,17 +272,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Shop"
+              $ref: "#/components/schemas/BasicShop"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     delete:
       tags: ["Shop"]
       operationId: DeleteShop
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-  /users/fees:
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/fees:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
     post:
       tags: ["Fee"]
       operationId: CreateFee
@@ -280,14 +296,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Fee"
+              $ref: "#/components/schemas/BasicFee"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/ObjectId"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     get:
       summary: list all user's fees
       tags: ["Fee"]
-      operationId: ListUserFees
+      operationId: ListFees
       responses:
         200:
           description: success
@@ -297,13 +315,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Fee"
-  /users/fees/{fee-oid}:
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/fees/{feeId}:
     parameters:
-      - name: fee-oid
+      - $ref: "#/components/parameters/UserId"
+      - name: feeId
         in: path
         required: true
         schema:
-          $ref: "#/components/schemas/OID"
+          $ref: "#/components/schemas/Id"
     put:
       tags: ["Fee"]
       operationId: UpdateFee
@@ -311,17 +332,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Fee"
+              $ref: "#/components/schemas/BasicFee"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     delete:
       tags: ["Fee"]
       operationId: DeleteFee
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-  /users/daily-items:
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/daily-items:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
     post:
       tags: ["Item"]
       operationId: CreateDailyItem
@@ -329,13 +356,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DailyItem"
+              $ref: "#/components/schemas/BasicDailyItem"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/ObjectId"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     get:
       tags: ["Item"]
-      operationId: ListUserDailyItems
+      operationId: ListDailyItems
       parameters:
         - name: date
           in: query
@@ -352,13 +381,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DailyItem"
-  /users/daily-items/{daily-item-oid}:
+        401:
+          $ref: "#/components/responses/EmptyResponse"
+  /users/{userId}/daily-items/{dailyItemId}:
     parameters:
-      - name: daily-item-oid
+      - $ref: "#/components/parameters/UserId"
+      - name: dailyItemId
         in: path
         required: true
         schema:
-          $ref: "#/components/schemas/OID"
+          $ref: "#/components/schemas/Id"
     put:
       tags: ["Item"]
       operationId: UpdateDailyItem
@@ -366,117 +398,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DailyItem"
+              $ref: "#/components/schemas/BasicDailyItem"
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+        200:
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
     delete:
       tags: ["Item"]
       operationId: DeleteDailyItem
       responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-  /users/daily-items/export:
-    get:
-      tags: ["Item"]
-      operationId: ExportDailyItems
-      parameters:
-        - name: format
-          in: query
-          schema:
-            type: string
-            enum:
-              - json
-              - xml
-      responses:
         200:
-          description: success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/DailyItem"
-            application/xml:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/DailyItem"
-                xml:
-                  name: items
-                  wrapped: true
-  /users/daily-items/import:
-    post:
-      tags: ["Item"]
-      operationId: ImportDailyItems
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/DailyItem"
-          application/xml:
-            schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/DailyItem"
-              xml:
-                name: items
-                wrapped: true
-      responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-  /users/repeating-items:
-    post:
-      tags: ["Item"]
-      operationId: CreateRepeatingItem
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RepeatingItem"
-      responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-    get:
-      summary: list all user's repeating items
-      tags: ["Item"]
-      operationId: ListUserRepeatingItems
-      responses:
-        200:
-          description: success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/RepeatingItem"
-  /users/repeating-items/{repeating-item-oid}:
-    parameters:
-      - name: repeating-item-oid
-        in: path
-        required: true
-        schema:
-          $ref: "#/components/schemas/OID"
-    put:
-      tags: ["Item"]
-      operationId: UpdateRepeatingItem
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RepeatingItem"
-      responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
-    delete:
-      tags: ["Item"]
-      operationId: DeleteRepeatingItem
-      responses:
-        default:
-          $ref: "#/components/responses/DefaultResponse"
+          $ref: "#/components/responses/EmptyResponse"
+        401:
+          $ref: "#/components/responses/EmptyResponse"
 components:
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      type: http
+      bearerFormat: jwt
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+    RefreshToken:
+      name: refreshToken
+      in: cookie
+      schema:
+        type: string
   schemas:
     Decimal:
       type: string
@@ -486,48 +439,70 @@ components:
     UserConfig:
       type: object
       properties:
-        compare_items_in_different_shop:
+        compareItemsInDifferentShop:
           type: boolean
-        compare_items_in_same_shop:
+        compareItemsInSameShop:
           type: boolean
-    OID:
+    Id:
       type: string
       format: uint64
       example: 0
-    ObjectOID:
+    ObjectId:
       type: object
       properties:
-        oid:
-          $ref: "#/components/schemas/OID"
-    Account:
+        id:
+          $ref: "#/components/schemas/Id"
+    BasicAccount:
       type: object
       properties:
         name:
           type: string
           description: account name
-        icon_oid:
-          $ref: "#/components/schemas/OID"
-        initial_balance:
+        iconId:
+          $ref: "#/components/schemas/Id"
+        initialBalance:
           $ref: "#/components/schemas/Decimal"
       required:
         - name
+    Account:
+      allOf:
+        - $ref: "#/components/schemas/ObjectId"
+        - $ref: "#/components/schemas/BasicAccount"
+        - type: object
+          properties:
+            balance:
+              $ref: "#/components/schemas/Decimal"
     CategoryType:
       type: string
       enum: ["expense", "income"]
-    Category:
+    CreatingCategory:
       type: object
       properties:
         type:
           $ref: "#/components/schemas/CategoryType"
         name:
           type: string
-        icon_oid:
-          $ref: "#/components/schemas/OID"
-          description: icon oid
+        iconId:
+          $ref: "#/components/schemas/Id"
+          description: icon id
       required:
         - type
         - name
-    Shop:
+    BasicCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        iconId:
+          $ref: "#/components/schemas/Id"
+          description: icon id
+      required:
+        - name
+    Category:
+      allOf:
+        - $ref: "#/components/schemas/ObjectId"
+        - $ref: "#/components/schemas/BasicCategory"
+    BasicShop:
       type: object
       properties:
         name:
@@ -536,52 +511,60 @@ components:
           type: string
       required:
         - name
-    Fee:
+    Shop:
+      allOf:
+        - $ref: "#/components/schemas/ObjectId"
+        - $ref: "#/components/schemas/BasicShop"
+    BasicFee:
       type: object
       properties:
         name:
           type: string
         value:
-          type: object
-          description: choose one of properties
-          properties:
-            rate:
-              $ref: "#/components/schemas/Decimal"
-            fixed:
-              $ref: "#/components/schemas/Decimal"
-    Item:
+          oneOf:
+            - type: object
+              properties:
+                rate:
+                  $ref: "#/components/schemas/Decimal"
+            - type: object
+              properties:
+                fixed:
+                  $ref: "#/components/schemas/Decimal"
+      required:
+        - name
+        - value
+    Fee:
+      allOf:
+        - $ref: "#/components/schemas/ObjectId"
+        - $ref: "#/components/schemas/BasicFee"
+    BasicItem:
       type: object
       properties:
         name:
           type: string
-        category:
+        categoryIds:
           type: array
           items:
-            $ref: "#/components/schemas/OID"
-            xml:
-              name: category
+            $ref: "#/components/schemas/Id"
           minLength: 1
-          xml:
-            name: categories
-            attribute: false
-            wrapped: true
-        shop_oid:
-          $ref: "#/components/schemas/OID"
+        shopId:
+          $ref: "#/components/schemas/Id"
         quantity:
           type: object
           properties:
             value:
               $ref: "#/components/schemas/Decimal"
         fee:
-          type: integer
+          $ref: "#/components/schemas/Decimal"
         price:
           $ref: "#/components/schemas/Decimal"
         memo:
           type: string
       required:
         - name
+        - categoryIds
         - price
-    DailyItem:
+    BasicDailyItem:
       allOf:
         - type: object
           properties:
@@ -590,64 +573,72 @@ components:
               format: date
           required:
             - date
-        - $ref: "#/components/schemas/Item"
-      xml:
-        name: item
-    RepeatingItem:
+        - $ref: "#/components/schemas/BasicItem"
+    DailyItem:
+      allOf:
+        - $ref: "#/components/schemas/ObjectId"
+        - $ref: "#/components/schemas/BasicDailyItem"
+    EmptyRequest:
+      type: object
+    LoginRequest:
       type: object
       properties:
-        item:
-          $ref: "#/components/schemas/Item"
-        valid:
-          type: object
-          properties:
-            start:
-              type: string
-              format: date
-            end:
-              type: string
-              format: date
-        frequency:
-          type: object
-          properties:
-            durations:
-              type: array
-              items:
-                type: object
-                properties:
-                  value:
-                    type: integer
-                  unit:
-                    type: string
-                    enum:
-                      - ONE_DAY
-                      - ONE_MONTH
-                      - ONE_YEAR
-                      - EVERY_WORK_DAY
-                required:
-                  - value
-                  - unit
-      required:
-        - item
-        - frequency
-    RefreshAuthRequest:
-      type: object
-      properties:
-        refresh_token:
+        id:
+          type: string
+        password:
           type: string
       required:
-        - "refresh_token"
+        - id
+        - password
+    SignUpRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - password
+        - name
   responses:
-    DefaultResponse:
+    EmptyResponse:
       description: ""
-    RefreshAuthResponse:
+      content:
+        application/json:
+          schema:
+            type: object
+    ObjectId:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ObjectId"
+    AuthenticationResponse:
+      headers:
+        Set-Cookie:
+          description: "set refreshToken to secure and HTTP only cookie and path for '/auth/refresh'"
+          schema:
+            type: string
+          example: "refreshToken=<value>; Expires=<date> HttpOnly; Path=/auth/refresh; Secure; SameSite="
       content:
         application/json:
           schema:
             type: object
             properties:
-              access_token:
+              accessToken:
                 type: string
-              refresh_token:
-                type: string
+      description: ""
+    LogoutResponse:
+      headers:
+        Set-Cookie:
+          description: "delete refreshToken cookie"
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            type: object
       description: ""
