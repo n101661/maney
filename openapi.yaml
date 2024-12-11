@@ -630,6 +630,8 @@ components:
             properties:
               accessToken:
                 type: string
+            required:
+              - accessToken
       description: ""
     LogoutResponse:
       headers:
