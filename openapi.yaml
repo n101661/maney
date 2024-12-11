@@ -66,9 +66,7 @@ paths:
       responses:
         200:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/config:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
+  /config:
     put:
       summary: update user config
       tags: ["User"]
@@ -95,9 +93,7 @@ paths:
                 $ref: "#/components/schemas/UserConfig"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/accounts:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
+  /accounts:
     post:
       summary: create an account for user
       tags: ["Account"]
@@ -127,9 +123,8 @@ paths:
                   $ref: "#/components/schemas/Account"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/accounts/{accountId}:
+  /accounts/{accountId}:
     parameters:
-      - $ref: "#/components/parameters/UserId"
       - name: accountId
         in: path
         required: true
@@ -158,9 +153,7 @@ paths:
           $ref: "#/components/responses/EmptyResponse"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/categories:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
+  /categories:
     post:
       summary: create category
       tags: ["Category"]
@@ -195,9 +188,8 @@ paths:
                   $ref: "#/components/schemas/Category"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/categories/{categoryId}:
+  /categories/{categoryId}:
     parameters:
-      - $ref: "#/components/parameters/UserId"
       - name: categoryId
         in: path
         required: true
@@ -226,9 +218,7 @@ paths:
           $ref: "#/components/responses/EmptyResponse"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/shops:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
+  /shops:
     post:
       tags: ["Shop"]
       operationId: CreateShop
@@ -257,9 +247,8 @@ paths:
                   $ref: "#/components/schemas/Shop"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/shops/{shopId}:
+  /shops/{shopId}:
     parameters:
-      - $ref: "#/components/parameters/UserId"
       - name: shopId
         in: path
         required: true
@@ -286,9 +275,7 @@ paths:
           $ref: "#/components/responses/EmptyResponse"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/fees:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
+  /fees:
     post:
       tags: ["Fee"]
       operationId: CreateFee
@@ -317,9 +304,8 @@ paths:
                   $ref: "#/components/schemas/Fee"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/fees/{feeId}:
+  /fees/{feeId}:
     parameters:
-      - $ref: "#/components/parameters/UserId"
       - name: feeId
         in: path
         required: true
@@ -346,9 +332,7 @@ paths:
           $ref: "#/components/responses/EmptyResponse"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/daily-items:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
+  /daily-items:
     post:
       tags: ["Item"]
       operationId: CreateDailyItem
@@ -383,9 +367,8 @@ paths:
                   $ref: "#/components/schemas/DailyItem"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /users/{userId}/daily-items/{dailyItemId}:
+  /daily-items/{dailyItemId}:
     parameters:
-      - $ref: "#/components/parameters/UserId"
       - name: dailyItemId
         in: path
         required: true
@@ -419,12 +402,6 @@ components:
       type: http
       bearerFormat: jwt
   parameters:
-    UserId:
-      name: userId
-      in: path
-      required: true
-      schema:
-        type: string
     RefreshToken:
       name: refreshToken
       in: cookie
