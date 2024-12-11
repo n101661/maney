@@ -75,7 +75,7 @@ func (s *Server) ListAccounts(ctx iris.Context) {
 }
 
 func (s *Server) UpdateAccount(ctx iris.Context) {
-	oid, err := ctx.Params().GetUint64("oid")
+	oid, err := ctx.Params().GetUint64("accountId")
 	if err != nil {
 		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
@@ -104,7 +104,7 @@ func (s *Server) UpdateAccount(ctx iris.Context) {
 }
 
 func (s *Server) DeleteAccount(ctx iris.Context) {
-	oid, err := ctx.Params().GetUint64("oid")
+	oid, err := ctx.Params().GetUint64("accountId")
 	if err != nil {
 		ctx.StopWithError(iris.StatusBadRequest, err)
 		return

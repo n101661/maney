@@ -13,7 +13,7 @@ import (
 	"github.com/n101661/maney/server/models"
 )
 
-func (s *Server) LogIn(ctx iris.Context) {
+func (s *Server) Login(ctx iris.Context) {
 	var r models.LogInRequestBody
 	if err := ctx.ReadJSON(&r); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
@@ -53,7 +53,7 @@ func (s *Server) LogIn(ctx iris.Context) {
 	ctx.StatusCode(iris.StatusOK)
 }
 
-func (s *Server) LogOut(ctx iris.Context) {
+func (s *Server) Logout(ctx iris.Context) {
 	ctx.Header("Set-Cookie", `token=""; Max-Age=0; HttpOnly`)
 	ctx.StatusCode(iris.StatusOK)
 }
