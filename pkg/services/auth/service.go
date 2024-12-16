@@ -39,16 +39,16 @@ type Service interface {
 }
 
 type service struct {
-	storage               storage.Storage
-	secret                []byte
-	accessTokenSigningKey []byte
+	storage                storage.Storage
+	refreshTokenSigningKey []byte
+	accessTokenSigningKey  []byte
 
 	opts *options
 }
 
 func NewService(
 	storage storage.Storage,
-	secret []byte,
+	refreshTokenSigningKey []byte,
 	accessTokenSigningKey []byte,
 	opts ...utils.Option[options],
 ) (Service, error) {
@@ -57,10 +57,10 @@ func NewService(
 	}
 
 	return &service{
-		storage:               storage,
-		secret:                secret,
-		accessTokenSigningKey: accessTokenSigningKey,
-		opts:                  utils.ApplyOptions(defaultOptions(), opts),
+		storage:                storage,
+		refreshTokenSigningKey: refreshTokenSigningKey,
+		accessTokenSigningKey:  accessTokenSigningKey,
+		opts:                   utils.ApplyOptions(defaultOptions(), opts),
 	}, nil
 }
 
@@ -100,7 +100,7 @@ func (s *service) ValidateUser(ctx context.Context, id, password string) error {
 }
 
 func (s *service) GenerateRefreshToken(ctx context.Context, claim *TokenClaims) (string, error) {
-	token, err := generateRefreshToken(claim, s.secret)
+	token, err := generateRefreshToken(claim, s.refreshTokenSigningKey)
 	if err != nil {
 		return "", err
 	}
@@ -148,13 +148,13 @@ func validatePassword(expected []byte, actual string) error {
 	return bcrypt.CompareHashAndPassword(expected, encrypt([]byte(actual)))
 }
 
-func generateRefreshToken(claim *TokenClaims, secret []byte) (string, error) {
+func generateRefreshToken(claim *TokenClaims, signingKey []byte) (string, error) {
 	payload, err := json.Marshal(claim)
 	if err != nil {
 		return "", err
 	}
 
-	hash := hmac.New(sha256.New, secret)
+	hash := hmac.New(sha256.New, signingKey)
 
 	n, err := hash.Write(payload)
 	if err != nil {
