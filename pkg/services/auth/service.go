@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/n101661/maney/pkg/models"
 	"github.com/n101661/maney/pkg/services/auth/storage"
 	"github.com/n101661/maney/pkg/utils"
@@ -38,18 +39,29 @@ type Service interface {
 }
 
 type service struct {
-	storage storage.Storage
-	secret  []byte
+	storage               storage.Storage
+	secret                []byte
+	accessTokenSigningKey []byte
 
 	opts *options
 }
 
-func NewService(storage storage.Storage, secret []byte, opts ...utils.Option[options]) Service {
-	return &service{
-		storage: storage,
-		secret:  secret,
-		opts:    utils.ApplyOptions(defaultOptions(), opts),
+func NewService(
+	storage storage.Storage,
+	secret []byte,
+	accessTokenSigningKey []byte,
+	opts ...utils.Option[options],
+) (Service, error) {
+	if len(accessTokenSigningKey) == 0 {
+		return nil, errors.New("required access token signing key")
 	}
+
+	return &service{
+		storage:               storage,
+		secret:                secret,
+		accessTokenSigningKey: accessTokenSigningKey,
+		opts:                  utils.ApplyOptions(defaultOptions(), opts),
+	}, nil
 }
 
 func (s *service) CreateUser(ctx context.Context, user *models.User) error {
@@ -119,7 +131,13 @@ func (s *service) ValidateRefreshToken(ctx context.Context, tokenID string) erro
 }
 
 func (s *service) GenerateAccessToken(ctx context.Context, claim *TokenClaims) (string, error) {
-	return "", fmt.Errorf("not implemented")
+	token := jwt.NewWithClaims(s.opts.accessTokenSigningMethod, accessTokenClaims{
+		UserID: claim.UserID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.opts.accessTokenExpireAfter)),
+		},
+	})
+	return token.SignedString(s.accessTokenSigningKey)
 }
 
 func (s *service) ValidateAccessToken(ctx context.Context, tokenID string) error {
