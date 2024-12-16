@@ -27,5 +27,6 @@ type User struct {
 
 type Token struct {
 	ID         string
+	UserID     string
 	ExpiryTime time.Time
 }
