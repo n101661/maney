@@ -30,6 +30,7 @@ type Service interface {
 	//  - ErrInvalidToken if the refresh token is invalid
 	//  - ErrTokenExpired if the refresh token is expired
 	ValidateRefreshToken(ctx context.Context, tokenID string) (*TokenClaims, error)
+	RevokeRefreshToken(ctx context.Context, tokenID string) error
 
 	GenerateAccessToken(ctx context.Context, claim *TokenClaims) (tokenID string, err error)
 	// ValidateAccessToken validates if the access token is valid or not. It returns:
@@ -131,6 +132,11 @@ func (s *service) ValidateRefreshToken(ctx context.Context, tokenID string) (*To
 		}, nil
 	}
 	return nil, ErrTokenExpired
+}
+
+func (s *service) RevokeRefreshToken(ctx context.Context, tokenID string) error {
+	_, err := s.storage.DeleteToken(ctx, tokenID)
+	return err
 }
 
 func (s *service) GenerateAccessToken(ctx context.Context, claim *TokenClaims) (string, error) {
