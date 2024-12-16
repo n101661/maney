@@ -35,7 +35,7 @@ type Service interface {
 	// ValidateAccessToken validates if the access token is valid or not. It returns:
 	//  - ErrInvalidToken if the access token is invalid
 	//  - ErrTokenExpired if the access token is expired
-	ValidateAccessToken(ctx context.Context, tokenID string) error
+	ValidateAccessToken(ctx context.Context, tokenID string) (*TokenClaims, error)
 }
 
 type service struct {
@@ -140,8 +140,22 @@ func (s *service) GenerateAccessToken(ctx context.Context, claim *TokenClaims) (
 	return token.SignedString(s.accessTokenSigningKey)
 }
 
-func (s *service) ValidateAccessToken(ctx context.Context, tokenID string) error {
-	return fmt.Errorf("not implemented")
+func (s *service) ValidateAccessToken(ctx context.Context, tokenID string) (*TokenClaims, error) {
+	claims := accessTokenClaims{}
+
+	_, err := jwt.ParseWithClaims(tokenID, &claims, func(t *jwt.Token) (interface{}, error) {
+		return s.accessTokenSigningKey, nil
+	})
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrTokenExpired
+		}
+		return nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
+	}
+
+	return &TokenClaims{
+		UserID: claims.UserID,
+	}, nil
 }
 
 func validatePassword(expected []byte, actual string) error {
