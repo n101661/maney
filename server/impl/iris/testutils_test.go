@@ -27,7 +27,7 @@ var (
 func TestMain(m *testing.M) {
 	myTestServer = NewServer(Config{
 		SecretKey: []byte("maney-secret-key"),
-	})
+	}, nil)
 
 	go func() {
 		if err := myTestServer.ListenAndServe(serverAddr); err != nil {

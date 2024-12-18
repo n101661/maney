@@ -25,7 +25,7 @@ type Service interface {
 	// is invalid it returns ErrUserNotFoundOrInvalidPassword error.
 	ValidateUser(ctx context.Context, id, password string) error
 
-	GenerateRefreshToken(ctx context.Context, claim *TokenClaims) (tokenID string, err error)
+	GenerateRefreshToken(ctx context.Context, claim *TokenClaims) (token *Token, err error)
 	// ValidateRefreshToken validates if the refresh token is valid or not. It returns:
 	//  - ErrInvalidToken if the refresh token is invalid
 	//  - ErrTokenExpired if the refresh token is expired
@@ -100,21 +100,25 @@ func (s *service) ValidateUser(ctx context.Context, id, password string) error {
 	return nil
 }
 
-func (s *service) GenerateRefreshToken(ctx context.Context, claim *TokenClaims) (string, error) {
-	token, err := generateRefreshToken(claim, s.refreshTokenSigningKey)
+func (s *service) GenerateRefreshToken(ctx context.Context, claim *TokenClaims) (*Token, error) {
+	tokenID, err := generateRefreshToken(claim, s.refreshTokenSigningKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	err = s.storage.CreateToken(ctx, &storage.Token{
-		ID:         token,
+		ID:         tokenID,
 		UserID:     claim.UserID,
 		ExpiryTime: time.Now().Add(s.opts.refreshTokenExpireAfter),
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return token, nil
+	return &Token{
+		ID:          tokenID,
+		Claims:      claim,
+		ExpireAfter: s.opts.refreshTokenExpireAfter,
+	}, nil
 }
 
 func (s *service) ValidateRefreshToken(ctx context.Context, tokenID string) (*TokenClaims, error) {

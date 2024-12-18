@@ -1,16 +1,18 @@
 module github.com/n101661/maney
 
-go 1.19
+go 1.22
+
+toolchain go1.22.4
 
 require (
-	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/iris-contrib/middleware/jwt v0.0.0-20221109225525-f806663b83a0
 	github.com/kataras/iris/v12 v12.2.0-beta6
 	github.com/shopspring/decimal v1.3.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.10.0
+	go.uber.org/mock v0.5.0
 	golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0
 )
 
@@ -51,7 +53,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/schollz/closestmatch v2.1.0+incompatible // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tdewolff/minify/v2 v2.12.4 // indirect
 	github.com/tdewolff/parse/v2 v2.6.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

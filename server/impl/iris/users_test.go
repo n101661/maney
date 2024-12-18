@@ -19,16 +19,16 @@ func TestServer_LogIn(t *testing.T) {
 	const addr = "http://" + serverAddr + "/log-in"
 
 	{ // missing required field
-		scenarios := []testScenario[models.LogInRequestBody]{
+		scenarios := []testScenario[models.LoginRequestBody]{
 			{
 				Name: "missing id",
-				RequestBody: models.LogInRequestBody{
+				RequestBody: models.LoginRequestBody{
 					ID:       "",
 					Password: myTestPassword.Raw,
 				},
 			}, {
 				Name: "missing password",
-				RequestBody: models.LogInRequestBody{
+				RequestBody: models.LoginRequestBody{
 					ID:       "my-id",
 					Password: "",
 				},
@@ -46,7 +46,7 @@ func TestServer_LogIn(t *testing.T) {
 		db.userService.On("Get", "unknown-id").Return((*dbModels.User)(nil), nil).Once()
 		myTestServer.db = db
 
-		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.LogInRequestBody{
+		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.LoginRequestBody{
 			ID:       "unknown-id",
 			Password: myTestPassword.Raw,
 		}))
@@ -64,7 +64,7 @@ func TestServer_LogIn(t *testing.T) {
 		}, nil).Once()
 		myTestServer.db = db
 
-		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.LogInRequestBody{
+		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.LoginRequestBody{
 			ID:       "my-id",
 			Password: "bad-password",
 		}))
@@ -82,7 +82,7 @@ func TestServer_LogIn(t *testing.T) {
 		}, nil).Once()
 		myTestServer.db = db
 
-		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.LogInRequestBody{
+		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.LoginRequestBody{
 			ID:       "my-id",
 			Password: myTestPassword.Raw,
 		}))

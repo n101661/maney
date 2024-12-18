@@ -1,56 +1,88 @@
 package iris
 
 import (
+	"context"
 	"errors"
-	"fmt"
-	"time"
+	"log"
+	"net/http"
 
 	"github.com/kataras/iris/v12"
 
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
-	"github.com/n101661/maney/server/impl/iris/auth"
+	authV2 "github.com/n101661/maney/pkg/services/auth"
 	"github.com/n101661/maney/server/models"
 )
 
-func (s *Server) Login(ctx iris.Context) {
-	var r models.LogInRequestBody
-	if err := ctx.ReadJSON(&r); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+func (s *Server) Login(c iris.Context) {
+	var r models.LoginRequestBody
+	if err := c.ReadJSON(&r); err != nil {
+		c.StatusCode(iris.StatusBadRequest)
+		c.WriteString(err.Error())
 		return
 	}
 
-	user, err := s.db.User().Get(r.ID)
+	ctx := c.Request().Context()
+
+	err := s.authService.ValidateUser(ctx, r.ID, r.Password)
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString(err.Error())
+		if errors.Is(err, authV2.ErrUserNotFoundOrInvalidPassword) {
+			c.StatusCode(iris.StatusUnauthorized)
+			return
+		}
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
 		return
 	}
 
-	if user == nil ||
-		s.auth.ValidatePassword(user.Password, []byte(r.Password)) != nil {
-		ctx.StatusCode(iris.StatusUnauthorized)
-		return
-	}
-
-	tokenMaxAge := 8 * time.Hour
-
-	token, err := s.auth.GenerateToken(auth.TokenClaims{
-		UserID: user.ID,
-		Name:   user.Name,
-	}, time.Now().Add(tokenMaxAge))
+	accessToken, refreshToken, err := s.generateToken(ctx, &authV2.TokenClaims{
+		UserID: r.ID,
+	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString(err.Error())
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
 		return
 	}
 
-	ctx.Header(
-		"Set-Cookie",
-		fmt.Sprintf("token=%s; Max-Age=%d; HttpOnly", token, tokenMaxAge/time.Second),
+	c.SetCookieKV(
+		"refreshToken", refreshToken.ID,
+		iris.CookiePath("/auth/refresh"),
+		iris.CookieExpires(refreshToken.ExpireAfter),
+		iris.CookieHTTPOnly(true),
+		iris.CookieSameSite(http.SameSiteStrictMode),
 	)
-	ctx.StatusCode(iris.StatusOK)
+	c.SetCookieKV(
+		"refreshToken", refreshToken.ID,
+		iris.CookiePath("/logout"),
+		iris.CookieExpires(refreshToken.ExpireAfter),
+		iris.CookieHTTPOnly(true),
+		iris.CookieSameSite(http.SameSiteStrictMode),
+	)
+
+	c.StatusCode(iris.StatusOK)
+	err = c.JSON(&models.LoginResponse{
+		AccessToken: accessToken,
+	})
+	if err != nil {
+		log.Printf("failed to response: %v\n", err)
+	}
+}
+
+func (s *Server) generateToken(
+	ctx context.Context,
+	claims *authV2.TokenClaims,
+) (accessTokenID string, refreshToken *authV2.Token, err error) {
+	accessTokenID, err = s.authService.GenerateAccessToken(ctx, claims)
+	if err != nil {
+		return "", nil, err
+	}
+
+	refreshToken, err = s.authService.GenerateRefreshToken(ctx, claims)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return accessTokenID, refreshToken, nil
 }
 
 func (s *Server) Logout(ctx iris.Context) {

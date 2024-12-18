@@ -2,3 +2,5 @@
 
 # openapi models
 server/models/
+
+*_mock.go

@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12"
 
 	"github.com/n101661/maney/database"
+	authV2 "github.com/n101661/maney/pkg/services/auth"
 	"github.com/n101661/maney/server/impl/iris/auth"
 )
 
@@ -15,15 +16,17 @@ type Config struct {
 }
 
 type Server struct {
-	app  *iris.Application
-	auth *auth.Authentication
+	app         *iris.Application
+	authService authV2.Service
+	auth        *auth.Authentication
 
 	db database.DB
 }
 
-func NewServer(cfg Config) *Server {
+func NewServer(cfg Config, authService authV2.Service) *Server {
 	s := &Server{
-		app: newIrisApplication(),
+		app:         newIrisApplication(),
+		authService: authService,
 		auth: auth.NewAuthentication(
 			cfg.SecretKey,
 			auth.WithPasswordSaltRound(cfg.PasswordSaltRound),
