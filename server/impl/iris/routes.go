@@ -4,7 +4,7 @@ func (s *Server) registerRoutes() {
 
 	s.app.Post("/auth/refresh")
 	s.app.Post("/login", s.Login)
-	s.app.Post("/logout", s.Logout)
+	s.app.Post("/auth/logout", s.Logout)
 	s.app.Post("/sign-up", s.SignUp)
 
 	user := s.app.Party("/", s.auth.ValidateToken)

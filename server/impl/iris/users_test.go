@@ -4,14 +4,111 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/httptest"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
+	authV2 "github.com/n101661/maney/pkg/services/auth"
 	"github.com/n101661/maney/server/models"
 )
+
+func TestServer_Login(t *testing.T) {
+	t.Run("missing id of request", func(t *testing.T) {
+		controller := gomock.NewController(t)
+
+		mockAuth := authV2.NewMockService(controller)
+
+		s := NewServer(Config{}, mockAuth)
+
+		mockServer := httptest.New(t, s.app, httptest.URL("http://localhost"))
+		mockServer.POST("/login").WithJSON(models.LoginRequestBody{
+			ID:       "",
+			Password: "password",
+		}).Expect().Status(httptest.StatusBadRequest)
+	})
+	t.Run("missing password of request", func(t *testing.T) {
+		controller := gomock.NewController(t)
+
+		mockAuth := authV2.NewMockService(controller)
+
+		s := NewServer(Config{}, mockAuth)
+
+		mockServer := httptest.New(t, s.app, httptest.URL("http://localhost"))
+		mockServer.POST("/login").WithJSON(models.LoginRequestBody{
+			ID:       "id",
+			Password: "",
+		}).Expect().Status(httptest.StatusBadRequest)
+	})
+	t.Run("no such user", func(t *testing.T) {
+		const (
+			userID   = "wrong-id"
+			password = "password"
+		)
+		controller := gomock.NewController(t)
+
+		mockAuth := authV2.NewMockService(controller)
+		mockAuth.EXPECT().
+			ValidateUser(gomock.Any(), userID, password).
+			Return(authV2.ErrUserNotFoundOrInvalidPassword)
+
+		s := NewServer(Config{}, mockAuth)
+
+		mockServer := httptest.New(t, s.app, httptest.URL("http://localhost"))
+		mockServer.POST("/login").WithJSON(models.LoginRequestBody{
+			ID:       userID,
+			Password: password,
+		}).Expect().Status(httptest.StatusUnauthorized)
+	})
+	t.Run("log in successful", func(t *testing.T) {
+		const (
+			userID         = "id"
+			password       = "password"
+			accessTokenID  = "my-access-token"
+			refreshTokenID = "my-refresh-token"
+		)
+		controller := gomock.NewController(t)
+
+		mockAuth := authV2.NewMockService(controller)
+		gomock.InOrder(
+			mockAuth.EXPECT().
+				ValidateUser(gomock.Any(), userID, password).
+				Return(nil),
+			mockAuth.EXPECT().
+				GenerateAccessToken(gomock.Any(), &authV2.TokenClaims{UserID: userID}).
+				Return(accessTokenID, nil),
+			mockAuth.EXPECT().
+				GenerateRefreshToken(gomock.Any(), &authV2.TokenClaims{UserID: userID}).
+				Return(&authV2.Token{
+					ID: refreshTokenID,
+					Claims: &authV2.TokenClaims{
+						UserID: userID,
+					},
+					ExpireAfter: time.Hour,
+				}, nil),
+		)
+
+		s := NewServer(Config{}, mockAuth)
+
+		mockServer := httptest.New(t, s.app, httptest.URL("http://localhost"))
+
+		expect := mockServer.POST("/login").WithJSON(models.LoginRequestBody{
+			ID:       userID,
+			Password: password,
+		}).Expect()
+		expect.Status(httptest.StatusOK)
+		expect.JSON().IsEqual(models.LoginResponse{
+			AccessToken: accessTokenID,
+		})
+		expect.Cookie("refreshToken").Value().NotEmpty()
+		expect.Cookie("refreshToken").Path().IsEqual("/auth")
+		expect.Cookie("refreshToken").HasMaxAge()
+	})
+}
 
 func TestServer_LogIn(t *testing.T) {
 	assert := assert.New(t)

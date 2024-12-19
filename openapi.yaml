@@ -42,7 +42,7 @@ paths:
           $ref: "#/components/responses/AuthenticationResponse"
         401:
           $ref: "#/components/responses/EmptyResponse"
-  /logout:
+  /auth/logout:
     post:
       summary: user logout
       tags: ["Auth", "User"]
@@ -593,10 +593,10 @@ components:
     AuthenticationResponse:
       headers:
         Set-Cookie:
-          description: "set refreshToken to secure and HTTP only cookie and path for '/auth/refresh'"
+          description: "set refreshToken to secure and HTTP only cookie and path for '/auth'"
           schema:
             type: string
-          example: "refreshToken=<value>; Expires=<date> HttpOnly; Path=/auth/refresh; Secure; SameSite="
+          example: "refreshToken=<value>; Expires=<date> HttpOnly; Path=/auth; Secure"
       content:
         application/json:
           schema:
