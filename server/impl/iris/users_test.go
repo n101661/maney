@@ -25,8 +25,8 @@ func TestServer_Login(t *testing.T) {
 
 		s := NewServer(Config{}, mockAuth)
 
-		mockServer := httptest.New(t, s.app, httptest.URL("http://localhost"))
-		mockServer.POST("/login").WithJSON(models.LoginRequestBody{
+		httpExpect := httptest.New(t, s.app, httptest.URL("http://localhost"))
+		httpExpect.POST("/login").WithJSON(models.LoginRequestBody{
 			ID:       "",
 			Password: "password",
 		}).Expect().Status(httptest.StatusBadRequest)
@@ -38,8 +38,8 @@ func TestServer_Login(t *testing.T) {
 
 		s := NewServer(Config{}, mockAuth)
 
-		mockServer := httptest.New(t, s.app, httptest.URL("http://localhost"))
-		mockServer.POST("/login").WithJSON(models.LoginRequestBody{
+		httpExpect := httptest.New(t, s.app, httptest.URL("http://localhost"))
+		httpExpect.POST("/login").WithJSON(models.LoginRequestBody{
 			ID:       "id",
 			Password: "",
 		}).Expect().Status(httptest.StatusBadRequest)
@@ -58,8 +58,8 @@ func TestServer_Login(t *testing.T) {
 
 		s := NewServer(Config{}, mockAuth)
 
-		mockServer := httptest.New(t, s.app, httptest.URL("http://localhost"))
-		mockServer.POST("/login").WithJSON(models.LoginRequestBody{
+		httpExpect := httptest.New(t, s.app, httptest.URL("http://localhost"))
+		httpExpect.POST("/login").WithJSON(models.LoginRequestBody{
 			ID:       userID,
 			Password: password,
 		}).Expect().Status(httptest.StatusUnauthorized)
@@ -94,9 +94,9 @@ func TestServer_Login(t *testing.T) {
 
 		s := NewServer(Config{}, mockAuth)
 
-		mockServer := httptest.New(t, s.app, httptest.URL("http://localhost"))
+		httpExpect := httptest.New(t, s.app, httptest.URL("http://localhost"))
 
-		expect := mockServer.POST("/login").WithJSON(models.LoginRequestBody{
+		expect := httpExpect.POST("/login").WithJSON(models.LoginRequestBody{
 			ID:       userID,
 			Password: password,
 		}).Expect()
