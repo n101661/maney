@@ -11,11 +11,11 @@ import (
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
 	authV2 "github.com/n101661/maney/pkg/services/auth"
-	"github.com/n101661/maney/server/models"
+	httpModels "github.com/n101661/maney/server/models"
 )
 
 func (s *Server) Login(c iris.Context) {
-	var r models.LoginRequestBody
+	var r httpModels.LoginRequestBody
 	if err := c.ReadJSON(&r); err != nil {
 		c.StatusCode(iris.StatusBadRequest)
 		c.WriteString(err.Error())
@@ -53,7 +53,7 @@ func (s *Server) Login(c iris.Context) {
 	)
 
 	c.StatusCode(iris.StatusOK)
-	err = c.JSON(&models.LoginResponse{
+	err = c.JSON(&httpModels.LoginResponse{
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -106,18 +106,18 @@ func (s *Server) Logout(c iris.Context) {
 	c.StatusCode(iris.StatusOK)
 }
 
-func (s *Server) SignUp(ctx iris.Context) {
-	var r models.SignUpRequestBody
-	if err := ctx.ReadJSON(&r); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString(err.Error())
+func (s *Server) SignUp(c iris.Context) {
+	var r httpModels.SignUpRequestBody
+	if err := c.ReadJSON(&r); err != nil {
+		c.StatusCode(iris.StatusBadRequest)
+		c.WriteString(err.Error())
 		return
 	}
 
 	pwd, err := s.auth.EncryptPassword(r.Password)
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString(err.Error())
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
 		return
 	}
 
@@ -128,20 +128,20 @@ func (s *Server) SignUp(ctx iris.Context) {
 	})
 	if err != nil {
 		if errors.Is(err, database.ErrResourceExisted) {
-			ctx.StatusCode(iris.StatusConflict)
-			ctx.WriteString("the user id has existed")
+			c.StatusCode(iris.StatusConflict)
+			c.WriteString("the user id has existed")
 			return
 		}
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.WriteString(err.Error())
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
 		return
 	}
 
-	ctx.StatusCode(iris.StatusOK)
+	c.StatusCode(iris.StatusOK)
 }
 
 func (s *Server) UpdateConfig(ctx iris.Context) {
-	var r models.UserConfigRequestBody
+	var r httpModels.UserConfigRequestBody
 	if err := ctx.ReadJSON(&r); err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
