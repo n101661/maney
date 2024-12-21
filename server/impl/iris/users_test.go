@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iris-contrib/httpexpect/v2"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
 	"github.com/stretchr/testify/assert"
@@ -14,82 +15,115 @@ import (
 	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
 	authV2 "github.com/n101661/maney/pkg/services/auth"
+	"github.com/n101661/maney/pkg/testing/aaa"
 	"github.com/n101661/maney/server/models"
 )
 
 func TestServer_Login(t *testing.T) {
+	type Vars struct {
+		userID         string
+		password       string
+		accessTokenID  string
+		refreshTokenID string
+		httpExpect     *httpexpect.Expect
+	}
+	aaa := aaa.New[Vars, httpexpect.Response]()
+
 	const path = "/login"
 
 	t.Run("missing id of request", func(t *testing.T) {
-		_, httpExpect := NewTest(t)
-
-		httpExpect.POST(path).WithJSON(models.LoginRequestBody{
-			ID:       "",
-			Password: "password",
-		}).Expect().Status(httptest.StatusBadRequest)
+		aaa.Arrange(func() *Vars {
+			_, httpExpect := NewTest(t)
+			return &Vars{httpExpect: httpExpect}
+		}).Act(func(v *Vars) *httpexpect.Response {
+			return v.httpExpect.POST(path).WithJSON(models.LoginRequestBody{
+				ID:       "",
+				Password: "password",
+			}).Expect()
+		}).Assert(func(v *Vars, expect *httpexpect.Response) {
+			expect.Status(httptest.StatusBadRequest)
+		})
 	})
 	t.Run("missing password of request", func(t *testing.T) {
-		_, httpExpect := NewTest(t)
-
-		httpExpect.POST(path).WithJSON(models.LoginRequestBody{
-			ID:       "id",
-			Password: "",
-		}).Expect().Status(httptest.StatusBadRequest)
+		aaa.Arrange(func() *Vars {
+			_, httpExpect := NewTest(t)
+			return &Vars{httpExpect: httpExpect}
+		}).Act(func(v *Vars) *httpexpect.Response {
+			return v.httpExpect.POST(path).WithJSON(models.LoginRequestBody{
+				ID:       "id",
+				Password: "",
+			}).Expect()
+		}).Assert(func(v *Vars, expect *httpexpect.Response) {
+			expect.Status(httptest.StatusBadRequest)
+		})
 	})
 	t.Run("no such user", func(t *testing.T) {
-		const (
-			userID   = "wrong-id"
-			password = "password"
-		)
-		mock, httpExpect := NewTest(t)
+		aaa.Arrange(func() *Vars {
+			mock, httpExpect := NewTest(t)
+			vars := &Vars{
+				userID:     "wrong-id",
+				password:   "password",
+				httpExpect: httpExpect,
+			}
 
-		mock.auth.EXPECT().
-			ValidateUser(gomock.Any(), userID, password).
-			Return(authV2.ErrUserNotFoundOrInvalidPassword)
+			mock.auth.EXPECT().
+				ValidateUser(gomock.Any(), vars.userID, vars.password).
+				Return(authV2.ErrUserNotFoundOrInvalidPassword)
 
-		httpExpect.POST(path).WithJSON(models.LoginRequestBody{
-			ID:       userID,
-			Password: password,
-		}).Expect().Status(httptest.StatusUnauthorized)
+			return vars
+		}).Act(func(v *Vars) *httpexpect.Response {
+			return v.httpExpect.POST(path).WithJSON(models.LoginRequestBody{
+				ID:       v.userID,
+				Password: v.password,
+			}).Expect()
+		}).Assert(func(v *Vars, expect *httpexpect.Response) {
+			expect.Status(httptest.StatusUnauthorized)
+		})
 	})
 	t.Run("log in successful", func(t *testing.T) {
-		const (
-			userID         = "id"
-			password       = "password"
-			accessTokenID  = "my-access-token"
-			refreshTokenID = "my-refresh-token"
-		)
-		mock, httpExpect := NewTest(t)
+		aaa.Arrange(func() *Vars {
+			mock, httpExpect := NewTest(t)
+			vars := &Vars{
+				userID:         "id",
+				password:       "password",
+				accessTokenID:  "my-access-token",
+				refreshTokenID: "my-refresh-token",
+				httpExpect:     httpExpect,
+			}
 
-		gomock.InOrder(
-			mock.auth.EXPECT().
-				ValidateUser(gomock.Any(), userID, password).
-				Return(nil),
-			mock.auth.EXPECT().
-				GenerateAccessToken(gomock.Any(), &authV2.TokenClaims{UserID: userID}).
-				Return(accessTokenID, nil),
-			mock.auth.EXPECT().
-				GenerateRefreshToken(gomock.Any(), &authV2.TokenClaims{UserID: userID}).
-				Return(&authV2.Token{
-					ID: refreshTokenID,
-					Claims: &authV2.TokenClaims{
-						UserID: userID,
-					},
-					ExpireAfter: time.Hour,
-				}, nil),
-		)
+			gomock.InOrder(
+				mock.auth.EXPECT().
+					ValidateUser(gomock.Any(), vars.userID, vars.password).
+					Return(nil),
+				mock.auth.EXPECT().
+					GenerateAccessToken(gomock.Any(), &authV2.TokenClaims{UserID: vars.userID}).
+					Return(vars.accessTokenID, nil),
+				mock.auth.EXPECT().
+					GenerateRefreshToken(gomock.Any(), &authV2.TokenClaims{UserID: vars.userID}).
+					Return(&authV2.Token{
+						ID: vars.refreshTokenID,
+						Claims: &authV2.TokenClaims{
+							UserID: vars.userID,
+						},
+						ExpireAfter: time.Hour,
+					}, nil),
+			)
 
-		expect := httpExpect.POST(path).WithJSON(models.LoginRequestBody{
-			ID:       userID,
-			Password: password,
-		}).Expect()
-		expect.Status(httptest.StatusOK)
-		expect.JSON().IsEqual(models.LoginResponse{
-			AccessToken: accessTokenID,
+			return vars
+		}).Act(func(v *Vars) *httpexpect.Response {
+			return v.httpExpect.POST(path).WithJSON(models.LoginRequestBody{
+				ID:       v.userID,
+				Password: v.password,
+			}).Expect()
+		}).Assert(func(v *Vars, expect *httpexpect.Response) {
+			expect.Status(httptest.StatusOK)
+			expect.JSON().IsEqual(models.LoginResponse{
+				AccessToken: v.accessTokenID,
+			})
+			expect.Cookie("refreshToken").Value().NotEmpty()
+			expect.Cookie("refreshToken").Path().IsEqual("/auth")
+			expect.Cookie("refreshToken").HasMaxAge()
 		})
-		expect.Cookie("refreshToken").Value().NotEmpty()
-		expect.Cookie("refreshToken").Path().IsEqual("/auth")
-		expect.Cookie("refreshToken").HasMaxAge()
 	})
 }
 
