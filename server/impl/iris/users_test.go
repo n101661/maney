@@ -120,9 +120,11 @@ func TestServer_Login(t *testing.T) {
 			expect.JSON().IsEqual(models.LoginResponse{
 				AccessToken: v.accessTokenID,
 			})
-			expect.Cookie(cookieRefreshToken).Value().NotEmpty()
-			expect.Cookie(cookieRefreshToken).Path().IsEqual("/auth")
-			expect.Cookie(cookieRefreshToken).HasMaxAge()
+
+			expectRefreshTokenCookie := expect.Cookie(cookieRefreshToken)
+			expectRefreshTokenCookie.Value().NotEmpty()
+			expectRefreshTokenCookie.Path().IsEqual("/auth")
+			expectRefreshTokenCookie.HasMaxAge()
 		})
 	})
 }
