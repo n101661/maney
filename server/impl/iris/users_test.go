@@ -18,28 +18,20 @@ import (
 )
 
 func TestServer_Login(t *testing.T) {
+	const path = "/login"
+
 	t.Run("missing id of request", func(t *testing.T) {
-		controller := gomock.NewController(t)
+		_, httpExpect := NewTest(t)
 
-		mockAuth := authV2.NewMockService(controller)
-
-		s := NewServer(Config{}, mockAuth)
-
-		httpExpect := httptest.New(t, s.app)
-		httpExpect.POST("/login").WithJSON(models.LoginRequestBody{
+		httpExpect.POST(path).WithJSON(models.LoginRequestBody{
 			ID:       "",
 			Password: "password",
 		}).Expect().Status(httptest.StatusBadRequest)
 	})
 	t.Run("missing password of request", func(t *testing.T) {
-		controller := gomock.NewController(t)
+		_, httpExpect := NewTest(t)
 
-		mockAuth := authV2.NewMockService(controller)
-
-		s := NewServer(Config{}, mockAuth)
-
-		httpExpect := httptest.New(t, s.app)
-		httpExpect.POST("/login").WithJSON(models.LoginRequestBody{
+		httpExpect.POST(path).WithJSON(models.LoginRequestBody{
 			ID:       "id",
 			Password: "",
 		}).Expect().Status(httptest.StatusBadRequest)
@@ -49,17 +41,13 @@ func TestServer_Login(t *testing.T) {
 			userID   = "wrong-id"
 			password = "password"
 		)
-		controller := gomock.NewController(t)
+		mock, httpExpect := NewTest(t)
 
-		mockAuth := authV2.NewMockService(controller)
-		mockAuth.EXPECT().
+		mock.auth.EXPECT().
 			ValidateUser(gomock.Any(), userID, password).
 			Return(authV2.ErrUserNotFoundOrInvalidPassword)
 
-		s := NewServer(Config{}, mockAuth)
-
-		httpExpect := httptest.New(t, s.app)
-		httpExpect.POST("/login").WithJSON(models.LoginRequestBody{
+		httpExpect.POST(path).WithJSON(models.LoginRequestBody{
 			ID:       userID,
 			Password: password,
 		}).Expect().Status(httptest.StatusUnauthorized)
@@ -71,17 +59,16 @@ func TestServer_Login(t *testing.T) {
 			accessTokenID  = "my-access-token"
 			refreshTokenID = "my-refresh-token"
 		)
-		controller := gomock.NewController(t)
+		mock, httpExpect := NewTest(t)
 
-		mockAuth := authV2.NewMockService(controller)
 		gomock.InOrder(
-			mockAuth.EXPECT().
+			mock.auth.EXPECT().
 				ValidateUser(gomock.Any(), userID, password).
 				Return(nil),
-			mockAuth.EXPECT().
+			mock.auth.EXPECT().
 				GenerateAccessToken(gomock.Any(), &authV2.TokenClaims{UserID: userID}).
 				Return(accessTokenID, nil),
-			mockAuth.EXPECT().
+			mock.auth.EXPECT().
 				GenerateRefreshToken(gomock.Any(), &authV2.TokenClaims{UserID: userID}).
 				Return(&authV2.Token{
 					ID: refreshTokenID,
@@ -92,11 +79,7 @@ func TestServer_Login(t *testing.T) {
 				}, nil),
 		)
 
-		s := NewServer(Config{}, mockAuth)
-
-		httpExpect := httptest.New(t, s.app)
-
-		expect := httpExpect.POST("/login").WithJSON(models.LoginRequestBody{
+		expect := httpExpect.POST(path).WithJSON(models.LoginRequestBody{
 			ID:       userID,
 			Password: password,
 		}).Expect()
