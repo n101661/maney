@@ -8,8 +8,8 @@ import (
 
 	"github.com/kataras/iris/v12"
 
-	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
+	"github.com/n101661/maney/pkg/models"
 	authV2 "github.com/n101661/maney/pkg/services/auth"
 	httpModels "github.com/n101661/maney/server/models"
 )
@@ -114,26 +114,19 @@ func (s *Server) SignUp(c iris.Context) {
 		return
 	}
 
-	pwd, err := s.auth.EncryptPassword(r.Password)
-	if err != nil {
-		c.StatusCode(iris.StatusInternalServerError)
-		c.WriteString(err.Error())
-		return
-	}
+	ctx := c.Request().Context()
 
-	err = s.db.User().Create(dbModels.User{
+	err := s.authService.CreateUser(ctx, &models.User{
 		ID:       r.ID,
-		Name:     r.Name,
-		Password: pwd,
+		Password: r.Password,
 	})
 	if err != nil {
-		if errors.Is(err, database.ErrResourceExisted) {
+		if errors.Is(err, authV2.ErrUserExists) {
 			c.StatusCode(iris.StatusConflict)
 			c.WriteString("the user id has existed")
 			return
 		}
 		c.StatusCode(iris.StatusInternalServerError)
-		c.WriteString(err.Error())
 		return
 	}
 

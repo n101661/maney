@@ -11,7 +11,6 @@ type LoginResponse struct {
 
 type SignUpRequestBody struct {
 	ID       string `json:"id" validate:"required"`
-	Name     string `json:"name" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
 

@@ -22,7 +22,6 @@ type Storage interface {
 type User struct {
 	ID       string
 	Password []byte
-	Email    string
 }
 
 type Token struct {

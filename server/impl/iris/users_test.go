@@ -2,21 +2,19 @@ package iris
 
 import (
 	"errors"
-	"net/http"
 	"testing"
 	"time"
 
 	"github.com/iris-contrib/httpexpect/v2"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
-	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"github.com/n101661/maney/database"
 	dbModels "github.com/n101661/maney/database/models"
+	"github.com/n101661/maney/pkg/models"
 	authV2 "github.com/n101661/maney/pkg/services/auth"
 	"github.com/n101661/maney/pkg/testing/aaa"
-	"github.com/n101661/maney/server/models"
+	httpModels "github.com/n101661/maney/server/models"
 )
 
 func TestServer_Login(t *testing.T) {
@@ -36,7 +34,7 @@ func TestServer_Login(t *testing.T) {
 			_, httpExpect := NewTest(t)
 			return &Vars{httpExpect: httpExpect}
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(models.LoginRequestBody{
+			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
 				ID:       "",
 				Password: "password",
 			}).Expect()
@@ -49,7 +47,7 @@ func TestServer_Login(t *testing.T) {
 			_, httpExpect := NewTest(t)
 			return &Vars{httpExpect: httpExpect}
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(models.LoginRequestBody{
+			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
 				ID:       "id",
 				Password: "",
 			}).Expect()
@@ -72,7 +70,7 @@ func TestServer_Login(t *testing.T) {
 
 			return vars
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(models.LoginRequestBody{
+			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
 				ID:       v.userID,
 				Password: v.password,
 			}).Expect()
@@ -111,13 +109,13 @@ func TestServer_Login(t *testing.T) {
 
 			return vars
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(models.LoginRequestBody{
+			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
 				ID:       v.userID,
 				Password: v.password,
 			}).Expect()
 		}).Assert(func(v *Vars, expect *httpexpect.Response) {
 			expect.Status(httptest.StatusOK)
-			expect.JSON().IsEqual(models.LoginResponse{
+			expect.JSON().IsEqual(httpModels.LoginResponse{
 				AccessToken: v.accessTokenID,
 			})
 
@@ -180,97 +178,105 @@ func TestServer_Logout(t *testing.T) {
 }
 
 func TestServer_SignUp(t *testing.T) {
-	assert := assert.New(t)
+	type Vars struct {
+		userID     string
+		password   string
+		httpExpect *httpexpect.Expect
+	}
+	aaa := aaa.New[Vars, httpexpect.Response]()
 
-	const addr = "http://" + serverAddr + "/sign-up"
+	const path = "/sign-up"
 
-	{ // missing required field
-		scenarios := []testScenario[models.SignUpRequestBody]{{
-			Name: "missing id",
-			RequestBody: models.SignUpRequestBody{
-				ID:       "",
-				Name:     "tester",
-				Password: myTestPassword.Raw,
-			},
-		}, {
-			Name: "missing name",
-			RequestBody: models.SignUpRequestBody{
-				ID:       "my-id",
-				Name:     "",
-				Password: myTestPassword.Raw,
-			},
-		}, {
-			Name: "missing password",
-			RequestBody: models.SignUpRequestBody{
-				ID:       "my-id",
-				Name:     "tester",
-				Password: "",
-			},
-		}}
-
-		for _, s := range scenarios {
-			resp, err := http.Post(addr, "application/json", MustHTTPBody(s.RequestBody))
-			assert.NoError(err, s.Name)
-			assert.EqualValues(iris.StatusBadRequest, resp.StatusCode, s.Name)
+	t.Run("missing required field of request", func(t *testing.T) {
+		type Test struct {
+			Name    string
+			Request httpModels.SignUpRequestBody
 		}
-	}
-	{ // the user has already existed
-		db := NewMockDB()
-		db.userService.On("Create", dbModels.User{
-			ID:       "my-id",
-			Name:     "tester",
-			Password: []byte("my-encrypted-password"),
-		}).Return(database.ErrResourceExisted).Once()
-		myTestServer.db = db
 
-		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.SignUpRequestBody{
-			ID:       "my-id",
-			Name:     "tester",
-			Password: myTestPassword.Raw,
-		}))
-		assert.NoError(err)
-		assert.EqualValues(iris.StatusConflict, resp.StatusCode)
+		testCases := []Test{
+			{
+				Name: "missing id",
+				Request: httpModels.SignUpRequestBody{
+					ID:       "",
+					Password: "password",
+				},
+			},
+			{
+				Name: "missing password",
+				Request: httpModels.SignUpRequestBody{
+					ID:       "id",
+					Password: "",
+				},
+			},
+		}
+		for _, c := range testCases {
+			t.Run(c.Name, func(t *testing.T) {
+				aaa.Arrange(func() *Vars {
+					_, httpExpect := NewTest(t)
+					return &Vars{
+						userID:     c.Request.ID,
+						password:   c.Request.Password,
+						httpExpect: httpExpect,
+					}
+				}).Act(func(v *Vars) *httpexpect.Response {
+					return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequestBody{
+						ID:       v.userID,
+						Password: v.password,
+					}).Expect()
+				}).Assert(func(v *Vars, expect *httpexpect.Response) {
+					expect.Status(httptest.StatusBadRequest)
+				})
+			})
+		}
+	})
+	t.Run("the user has already existed", func(t *testing.T) {
+		aaa.Arrange(func() *Vars {
+			mock, httpExpect := NewTest(t)
+			vars := &Vars{
+				userID:     "my-id",
+				password:   "my-password",
+				httpExpect: httpExpect,
+			}
 
-		db.AssertExpectations(t)
-	}
-	{ // failed to create user(unexpected error)
-		db := NewMockDB()
-		db.userService.On("Create", dbModels.User{
-			ID:       "my-id",
-			Name:     "tester",
-			Password: []byte("my-encrypted-password"),
-		}).Return(errors.New("unexpected error")).Once()
-		myTestServer.db = db
+			mock.auth.EXPECT().CreateUser(gomock.Any(), &models.User{
+				ID:       vars.userID,
+				Password: vars.password,
+			}).Return(authV2.ErrUserExists)
 
-		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.SignUpRequestBody{
-			ID:       "my-id",
-			Name:     "tester",
-			Password: myTestPassword.Raw,
-		}))
-		assert.NoError(err)
-		assert.EqualValues(iris.StatusInternalServerError, resp.StatusCode)
+			return vars
+		}).Act(func(v *Vars) *httpexpect.Response {
+			return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequestBody{
+				ID:       v.userID,
+				Password: v.password,
+			}).Expect()
+		}).Assert(func(v *Vars, expect *httpexpect.Response) {
+			expect.Status(httptest.StatusConflict)
+		})
+	})
+	t.Run("sign up successful", func(t *testing.T) {
+		aaa.Arrange(func() *Vars {
+			mock, httpExpect := NewTest(t)
+			vars := &Vars{
+				userID:     "my-id",
+				password:   "my-password",
+				httpExpect: httpExpect,
+			}
 
-		db.AssertExpectations(t)
-	}
-	{ // sign up successful
-		db := NewMockDB()
-		db.userService.On("Create", dbModels.User{
-			ID:       "my-id",
-			Name:     "tester",
-			Password: []byte("my-encrypted-password"),
-		}).Return(nil).Once()
-		myTestServer.db = db
+			mock.auth.EXPECT().CreateUser(gomock.Any(), &models.User{
+				ID:       vars.userID,
+				Password: vars.password,
+			}).Return(nil)
 
-		resp, err := http.Post(addr, "application/json", MustHTTPBody(models.SignUpRequestBody{
-			ID:       "my-id",
-			Name:     "tester",
-			Password: myTestPassword.Raw,
-		}))
-		assert.NoError(err)
-		assert.EqualValues(iris.StatusOK, resp.StatusCode)
-
-		db.AssertExpectations(t)
-	}
+			return vars
+		}).Act(func(v *Vars) *httpexpect.Response {
+			return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequestBody{
+				ID:       v.userID,
+				Password: v.password,
+			}).Expect()
+		}).Assert(func(v *Vars, expect *httpexpect.Response) {
+			expect.Status(httptest.StatusOK)
+		})
+	})
 }
 
 func (s *LogInAndDoSuite) TestServer_UpdateConfig() {

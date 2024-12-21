@@ -74,7 +74,6 @@ func (s *service) CreateUser(ctx context.Context, user *models.User) error {
 	err = s.storage.CreateUser(ctx, &storage.User{
 		ID:       user.ID,
 		Password: password,
-		Email:    user.Email,
 	})
 	if err != nil {
 		if errors.Is(err, storage.ErrExists) {
