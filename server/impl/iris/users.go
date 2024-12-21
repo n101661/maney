@@ -45,7 +45,7 @@ func (s *Server) Login(c iris.Context) {
 	}
 
 	c.SetCookieKV(
-		"refreshToken", refreshToken.ID,
+		cookieRefreshToken, refreshToken.ID,
 		iris.CookiePath("/auth"),
 		iris.CookieExpires(refreshToken.ExpireAfter),
 		iris.CookieHTTPOnly(true),
@@ -78,9 +78,32 @@ func (s *Server) generateToken(
 	return accessTokenID, refreshToken, nil
 }
 
-func (s *Server) Logout(ctx iris.Context) {
-	ctx.Header("Set-Cookie", `token=""; Max-Age=0; HttpOnly`)
-	ctx.StatusCode(iris.StatusOK)
+func (s *Server) Logout(c iris.Context) {
+	cookie, err := c.Request().Cookie(cookieRefreshToken)
+	if err != nil {
+		if errors.Is(err, http.ErrNoCookie) {
+			c.StatusCode(iris.StatusOK)
+			return
+		}
+		c.StatusCode(iris.StatusInternalServerError)
+		return
+	}
+
+	err = s.authService.RevokeRefreshToken(c.Request().Context(), cookie.Value)
+	if err != nil {
+		c.StatusCode(iris.StatusInternalServerError)
+		return
+	}
+
+	c.SetCookieKV(
+		cookieRefreshToken, cookie.Value,
+		iris.CookiePath("/auth"),
+		iris.CookieExpires(0),
+		iris.CookieHTTPOnly(true),
+		iris.CookieSameSite(http.SameSiteStrictMode),
+	)
+
+	c.StatusCode(iris.StatusOK)
 }
 
 func (s *Server) SignUp(ctx iris.Context) {

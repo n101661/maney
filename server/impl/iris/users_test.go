@@ -120,20 +120,61 @@ func TestServer_Login(t *testing.T) {
 			expect.JSON().IsEqual(models.LoginResponse{
 				AccessToken: v.accessTokenID,
 			})
-			expect.Cookie("refreshToken").Value().NotEmpty()
-			expect.Cookie("refreshToken").Path().IsEqual("/auth")
-			expect.Cookie("refreshToken").HasMaxAge()
+			expect.Cookie(cookieRefreshToken).Value().NotEmpty()
+			expect.Cookie(cookieRefreshToken).Path().IsEqual("/auth")
+			expect.Cookie(cookieRefreshToken).HasMaxAge()
 		})
 	})
 }
 
-func TestServer_LogOut(t *testing.T) {
-	assert := assert.New(t)
+func TestServer_Logout(t *testing.T) {
+	type Vars struct {
+		refreshTokenID string
+		httpExpect     *httpexpect.Expect
+	}
+	aaa := aaa.New[Vars, httpexpect.Response]()
 
-	resp, err := http.Post("http://"+serverAddr+"/log-out", "application/json", nil)
-	assert.NoError(err)
-	assert.EqualValues(iris.StatusOK, resp.StatusCode)
-	assert.NotEmpty(resp.Header.Get("Set-Cookie"))
+	const path = "/auth/logout"
+
+	t.Run("missing refresh token", func(t *testing.T) {
+		aaa.Arrange(func() *Vars {
+			_, httpExpect := NewTest(t)
+			return &Vars{
+				httpExpect: httpExpect,
+			}
+		}).Act(func(v *Vars) *httpexpect.Response {
+			return v.httpExpect.POST(path).Expect()
+		}).Assert(func(v *Vars, expect *httpexpect.Response) {
+			expect.Status(httptest.StatusOK)
+			expect.Cookies().IsEmpty()
+		})
+	})
+	t.Run("log out successful", func(t *testing.T) {
+		aaa.Arrange(func() *Vars {
+			mock, httpExpect := NewTest(t)
+			vars := &Vars{
+				refreshTokenID: "my-refresh-token",
+				httpExpect:     httpExpect,
+			}
+
+			mock.auth.EXPECT().
+				RevokeRefreshToken(gomock.Any(), vars.refreshTokenID).
+				Return(nil)
+
+			return vars
+		}).Act(func(v *Vars) *httpexpect.Response {
+			return v.httpExpect.POST(path).
+				WithCookie(cookieRefreshToken, v.refreshTokenID).
+				Expect()
+		}).Assert(func(v *Vars, expect *httpexpect.Response) {
+			expect.Status(httptest.StatusOK)
+
+			expectRefreshTokenCookie := expect.Cookie(cookieRefreshToken)
+			expectRefreshTokenCookie.Value().NotEmpty()
+			expectRefreshTokenCookie.Path().IsEqual("/auth")
+			expectRefreshTokenCookie.NotHasMaxAge()
+		})
+	})
 }
 
 func TestServer_SignUp(t *testing.T) {
