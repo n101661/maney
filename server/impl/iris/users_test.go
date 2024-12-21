@@ -123,7 +123,7 @@ func TestServer_Login(t *testing.T) {
 
 			expectRefreshTokenCookie := expect.Cookie(cookieRefreshToken)
 			expectRefreshTokenCookie.Value().NotEmpty()
-			expectRefreshTokenCookie.Path().IsEqual("/auth")
+			expectRefreshTokenCookie.Path().IsEqual(cookiePathRefreshToken)
 			expectRefreshTokenCookie.HasMaxAge()
 		})
 	})
@@ -173,7 +173,7 @@ func TestServer_Logout(t *testing.T) {
 
 			expectRefreshTokenCookie := expect.Cookie(cookieRefreshToken)
 			expectRefreshTokenCookie.Value().NotEmpty()
-			expectRefreshTokenCookie.Path().IsEqual("/auth")
+			expectRefreshTokenCookie.Path().IsEqual(cookiePathRefreshToken)
 			expectRefreshTokenCookie.NotHasMaxAge()
 		})
 	})

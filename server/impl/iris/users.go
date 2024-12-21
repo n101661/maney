@@ -46,7 +46,7 @@ func (s *Server) Login(c iris.Context) {
 
 	c.SetCookieKV(
 		cookieRefreshToken, refreshToken.ID,
-		iris.CookiePath("/auth"),
+		iris.CookiePath(cookiePathRefreshToken),
 		iris.CookieExpires(refreshToken.ExpireAfter),
 		iris.CookieHTTPOnly(true),
 		iris.CookieSameSite(http.SameSiteStrictMode),
@@ -97,7 +97,7 @@ func (s *Server) Logout(c iris.Context) {
 
 	c.SetCookieKV(
 		cookieRefreshToken, cookie.Value,
-		iris.CookiePath("/auth"),
+		iris.CookiePath(cookiePathRefreshToken),
 		iris.CookieExpires(0),
 		iris.CookieHTTPOnly(true),
 		iris.CookieSameSite(http.SameSiteStrictMode),
