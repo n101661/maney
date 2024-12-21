@@ -1,9 +1,7 @@
 package iris
 
 import (
-	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"io"
 	"os"
 	"testing"
@@ -55,27 +53,6 @@ func TestMain(m *testing.M) {
 	}()
 
 	os.Exit(m.Run())
-}
-
-type testScenario[M any] struct {
-	Name        string
-	RequestBody M
-}
-
-func MustHTTPBody(v interface{}) io.Reader {
-	if v == nil {
-		return nil
-	}
-
-	if r, ok := v.(io.Reader); ok {
-		return r
-	}
-
-	data, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-	return bytes.NewReader(data)
 }
 
 func mustGetResponseBodyJSON(body io.ReadCloser) string {
