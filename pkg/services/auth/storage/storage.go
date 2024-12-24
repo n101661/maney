@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"io"
 	"time"
 )
 
@@ -17,6 +18,8 @@ type Storage interface {
 	GetToken(ctx context.Context, tokenID string) (*Token, error)
 	// DeleteToken deletes the specified token. It returns the deleted token if successful.
 	DeleteToken(ctx context.Context, tokenID string) (*Token, error)
+
+	io.Closer
 }
 
 type User struct {

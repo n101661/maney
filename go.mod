@@ -13,6 +13,7 @@ require (
 	github.com/kataras/iris/v12 v12.2.11
 	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.10.0
+	go.etcd.io/bbolt v1.3.11
 	go.uber.org/mock v0.5.0
 	golang.org/x/crypto v0.22.0
 )
