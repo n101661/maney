@@ -6,14 +6,11 @@ import (
 	"time"
 
 	"github.com/n101661/maney/pkg/encoding"
-	"github.com/n101661/maney/pkg/logger"
 	toml "github.com/pelletier/go-toml/v2"
-	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
 	App  *AppConfig         `toml:"application"`
-	Log  *logger.Config     `toml:"log"`
 	Auth *AuthServiceConfig `toml:"authentication-service"`
 }
 
@@ -52,10 +49,6 @@ func CreateDefaultConfig(path string) (err error) {
 		App: &AppConfig{
 			Host: "localhost",
 			Port: 8080,
-		},
-		Log: &logger.Config{
-			Development: false,
-			Level:       zapcore.InfoLevel,
 		},
 		Auth: &AuthServiceConfig{
 			BoltDBPath:              "auth.db",
