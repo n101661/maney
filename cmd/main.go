@@ -17,19 +17,19 @@ func main() {
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err = CreateDefaultConfig(configPath); err != nil {
-				fmt.Printf("failed to create %s: %v\n", configPath, err)
+				fmt.Printf("failed to create %s: %v", configPath, err)
 				os.Exit(1)
 			}
-			fmt.Printf("the %s has been created, please setup first\n", configPath)
+			fmt.Printf("the %s has been created, please setup first", configPath)
 			return
 		}
-		fmt.Println("failed to load config:", err)
+		fmt.Printf("failed to load config: %v", err)
 		os.Exit(1)
 	}
 
 	authStorage, err := bolt.New(config.Auth.BoltDBPath)
 	if err != nil {
-		fmt.Println("failed to initial the storage of the authentication service:", err)
+		fmt.Printf("failed to initial the storage of the authentication service: %v", err)
 		os.Exit(1)
 	}
 	defer authStorage.Close()
@@ -43,13 +43,13 @@ func main() {
 		auth.WithSaltPasswordRound(config.Auth.SaltPasswordRound),
 	)
 	if err != nil {
-		fmt.Println("failed to initial the authentication service:", err)
+		fmt.Printf("failed to initial the authentication service: %v", err)
 		os.Exit(1)
 	}
 
-	s := iris.NewServer(iris.Config{}, authService)
+	s := iris.NewServer(config.App.Config, authService)
 	if err := s.ListenAndServe(fmt.Sprintf("%s:%d", config.App.Host, config.App.Port)); err != nil {
-		fmt.Println("failed to listen and serve:", err)
+		fmt.Printf("failed to listen and serve: %v", err)
 		os.Exit(1)
 	}
 }

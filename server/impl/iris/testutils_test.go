@@ -25,7 +25,7 @@ func NewTest(t *testing.T) (*mockService, *httpexpect.Expect) {
 
 	return &mockService{
 		auth: mockAuth,
-	}, httptest.New(t, NewServer(Config{}, mockAuth).app)
+	}, httptest.New(t, NewServer(&Config{}, mockAuth).app)
 }
 
 const serverAddr = "localhost:8080"
@@ -42,7 +42,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	myTestServer = NewServer(Config{
+	myTestServer = NewServer(&Config{
 		SecretKey: []byte("maney-secret-key"),
 	}, nil)
 

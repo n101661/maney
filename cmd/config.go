@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/n101661/maney/pkg/encoding"
+	"github.com/n101661/maney/server/impl/iris"
+	"github.com/n101661/maney/server/impl/iris/config"
 	toml "github.com/pelletier/go-toml/v2"
 )
 
@@ -17,6 +19,8 @@ type Config struct {
 type AppConfig struct {
 	Host string `toml:"host" comment:"Host of the application."`
 	Port int    `toml:"port" comment:"Port of the application."`
+
+	*iris.Config
 }
 
 type AuthServiceConfig struct {
@@ -49,6 +53,10 @@ func CreateDefaultConfig(path string) (err error) {
 		App: &AppConfig{
 			Host: "localhost",
 			Port: 8080,
+			Config: &iris.Config{
+				LogLevel:    config.LogLevelInfo,
+				CorsOrigins: []string{"*"},
+			},
 		},
 		Auth: &AuthServiceConfig{
 			BoltDBPath:              "auth.db",
