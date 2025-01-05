@@ -29,6 +29,11 @@ type User struct {
 
 type Token struct {
 	ID         string
-	UserID     string
+	Claim      *TokenClaims
 	ExpiryTime time.Time
+}
+
+type TokenClaims struct {
+	UserID string
+	Nonce  int
 }

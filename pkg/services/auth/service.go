@@ -107,7 +107,7 @@ func (s *service) GenerateRefreshToken(ctx context.Context, claim *TokenClaims) 
 
 	err = s.storage.CreateToken(ctx, &storage.Token{
 		ID:         tokenID,
-		UserID:     claim.UserID,
+		Claim:      claim,
 		ExpiryTime: time.Now().Add(s.opts.refreshTokenExpireAfter),
 	})
 	if err != nil {
@@ -130,9 +130,7 @@ func (s *service) ValidateRefreshToken(ctx context.Context, tokenID string) (*To
 	}
 
 	if time.Now().Before(token.ExpiryTime) {
-		return &TokenClaims{
-			UserID: token.UserID,
-		}, nil
+		return token.Claim, nil
 	}
 	return nil, ErrTokenExpired
 }

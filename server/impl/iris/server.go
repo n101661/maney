@@ -2,6 +2,7 @@ package iris
 
 import (
 	"slices"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/kataras/iris/v12"
@@ -10,6 +11,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/requestid"
 	"github.com/n101661/maney/database"
 	authV2 "github.com/n101661/maney/pkg/services/auth"
+	"github.com/n101661/maney/pkg/utils"
 	"github.com/n101661/maney/server/impl/iris/auth"
 	"github.com/n101661/maney/server/impl/iris/config"
 )
@@ -23,15 +25,35 @@ type Config struct {
 	PasswordSaltRound int    `toml:"-"`
 }
 
+type options struct {
+	getNonce func() int
+}
+
+func defaultOptions() *options {
+	return &options{
+		getNonce: func() int {
+			return int(time.Now().UnixNano()) % 9999
+		},
+	}
+}
+
+func WithNonceGenerator(f func() int) utils.Option[options] {
+	return func(o *options) {
+		o.getNonce = f
+	}
+}
+
 type Server struct {
 	app         *iris.Application
 	authService authV2.Service
 	auth        *auth.Authentication
 
 	db database.DB
+
+	opts *options
 }
 
-func NewServer(cfg *Config, authService authV2.Service) *Server {
+func NewServer(cfg *Config, authService authV2.Service, opts ...utils.Option[options]) *Server {
 	s := &Server{
 		app:         newIrisApplication(cfg),
 		authService: authService,
@@ -39,7 +61,8 @@ func NewServer(cfg *Config, authService authV2.Service) *Server {
 			cfg.SecretKey,
 			auth.WithPasswordSaltRound(cfg.PasswordSaltRound),
 		),
-		db: nil, // TODO
+		db:   nil, // TODO
+		opts: utils.ApplyOptions(defaultOptions(), opts),
 	}
 
 	s.registerRoutes()

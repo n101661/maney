@@ -4,11 +4,10 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
+	"github.com/n101661/maney/pkg/services/auth/storage"
 )
 
-type TokenClaims struct {
-	UserID string
-}
+type TokenClaims = storage.TokenClaims
 
 type Token struct {
 	ID          string

@@ -28,10 +28,13 @@ func TestServer_Login(t *testing.T) {
 	aaa := aaa.New[Vars, httpexpect.Response]()
 
 	const path = "/login"
+	var (
+		nonceGenerator = func() int { return 0 }
+	)
 
 	t.Run("missing id of request", func(t *testing.T) {
 		aaa.Arrange(func() *Vars {
-			_, httpExpect := NewTest(t)
+			_, httpExpect := NewTest(t, WithNonceGenerator(nonceGenerator))
 			return &Vars{httpExpect: httpExpect}
 		}).Act(func(v *Vars) *httpexpect.Response {
 			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
@@ -44,7 +47,7 @@ func TestServer_Login(t *testing.T) {
 	})
 	t.Run("missing password of request", func(t *testing.T) {
 		aaa.Arrange(func() *Vars {
-			_, httpExpect := NewTest(t)
+			_, httpExpect := NewTest(t, WithNonceGenerator(nonceGenerator))
 			return &Vars{httpExpect: httpExpect}
 		}).Act(func(v *Vars) *httpexpect.Response {
 			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
@@ -57,7 +60,7 @@ func TestServer_Login(t *testing.T) {
 	})
 	t.Run("no such user", func(t *testing.T) {
 		aaa.Arrange(func() *Vars {
-			mock, httpExpect := NewTest(t)
+			mock, httpExpect := NewTest(t, WithNonceGenerator(nonceGenerator))
 			vars := &Vars{
 				userID:     "wrong-id",
 				password:   "password",
@@ -80,7 +83,7 @@ func TestServer_Login(t *testing.T) {
 	})
 	t.Run("log in successful", func(t *testing.T) {
 		aaa.Arrange(func() *Vars {
-			mock, httpExpect := NewTest(t)
+			mock, httpExpect := NewTest(t, WithNonceGenerator(nonceGenerator))
 			vars := &Vars{
 				userID:         "id",
 				password:       "password",

@@ -49,15 +49,21 @@ func TestStorage(t *testing.T) {
 	})
 	t.Run("create the token successful", func(t *testing.T) {
 		assert.NoError(t, s.CreateToken(context.Background(), &storage.Token{
-			ID:         "token",
-			UserID:     "tester",
+			ID: "token",
+			Claim: &storage.TokenClaims{
+				UserID: "tester",
+				Nonce:  0,
+			},
 			ExpiryTime: time.Now(),
 		}))
 	})
 	t.Run("create existing token failed", func(t *testing.T) {
 		assert.ErrorIs(t, s.CreateToken(context.Background(), &storage.Token{
-			ID:         "token",
-			UserID:     "tester-2",
+			ID: "token",
+			Claim: &storage.TokenClaims{
+				UserID: "tester-2",
+				Nonce:  0,
+			},
 			ExpiryTime: time.Now(),
 		}), storage.ErrExists)
 	})
@@ -68,8 +74,11 @@ func TestStorage(t *testing.T) {
 		// Ignore the expiry time because it depends on the unmarshalling function.
 		token.ExpiryTime = time.Time{}
 		assert.Equal(t, &storage.Token{
-			ID:     "token",
-			UserID: "tester",
+			ID: "token",
+			Claim: &storage.TokenClaims{
+				UserID: "tester",
+				Nonce:  0,
+			},
 		}, token)
 	})
 	t.Run("get non-existing token failed", func(t *testing.T) {
@@ -84,8 +93,11 @@ func TestStorage(t *testing.T) {
 		// Ignore the expiry time because it depends on the unmarshalling function.
 		token.ExpiryTime = time.Time{}
 		assert.Equal(t, &storage.Token{
-			ID:     "token",
-			UserID: "tester",
+			ID: "token",
+			Claim: &storage.TokenClaims{
+				UserID: "tester",
+				Nonce:  0,
+			},
 		}, token)
 	})
 	t.Run("delete non-existing token successful", func(t *testing.T) {

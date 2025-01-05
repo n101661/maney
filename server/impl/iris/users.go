@@ -37,6 +37,7 @@ func (s *Server) Login(c iris.Context) {
 
 	accessToken, refreshToken, err := s.generateToken(ctx, &authV2.TokenClaims{
 		UserID: r.ID,
+		Nonce:  s.opts.getNonce(),
 	})
 	if err != nil {
 		c.StatusCode(iris.StatusInternalServerError)

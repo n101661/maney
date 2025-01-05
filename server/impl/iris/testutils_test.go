@@ -12,20 +12,21 @@ import (
 	"go.uber.org/mock/gomock"
 
 	authV2 "github.com/n101661/maney/pkg/services/auth"
+	"github.com/n101661/maney/pkg/utils"
 )
 
 type mockService struct {
 	auth *authV2.MockService
 }
 
-func NewTest(t *testing.T) (*mockService, *httpexpect.Expect) {
+func NewTest(t *testing.T, opts ...utils.Option[options]) (*mockService, *httpexpect.Expect) {
 	controller := gomock.NewController(t)
 
 	mockAuth := authV2.NewMockService(controller)
 
 	return &mockService{
 		auth: mockAuth,
-	}, httptest.New(t, NewServer(&Config{}, mockAuth).app)
+	}, httptest.New(t, NewServer(&Config{}, mockAuth, opts...).app)
 }
 
 const serverAddr = "localhost:8080"
