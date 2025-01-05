@@ -8,3 +8,6 @@ server/models/
 *.db
 *.toml
 *.log
+
+*.exe
+*.sh
