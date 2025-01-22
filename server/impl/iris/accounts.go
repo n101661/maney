@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Server) CreateAccount(ctx iris.Context) {
-	var req models.Account
+	var req models.Account_
 	if err := ctx.ReadJSON(&req); err != nil {
 		ctx.StopWithError(iris.StatusBadRequest, err)
 		return
@@ -58,7 +58,7 @@ func (s *Server) ListAccounts(ctx iris.Context) {
 	for i, acc := range accounts {
 		resp[i] = models.GetAccountResponse{
 			OID: acc.OID,
-			Account: models.Account{
+			Account_: models.Account_{
 				Name:           acc.Name,
 				IconOID:        acc.IconOID,
 				InitialBalance: acc.InitialBalance,
@@ -81,7 +81,7 @@ func (s *Server) UpdateAccount(ctx iris.Context) {
 		return
 	}
 
-	var body models.Account
+	var body models.Account_
 	if err := ctx.ReadJSON(&body); err != nil {
 		ctx.StopWithError(iris.StatusBadRequest, err)
 		return

@@ -11,3 +11,5 @@ server/models/
 
 *.exe
 *.sh
+
+*_gen.go
