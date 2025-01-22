@@ -413,6 +413,11 @@ components:
       format: float64
       example: 0.0
       description: a string represented as a float64
+    WrappedQuantity:
+      type: object
+      properties:
+        value:
+          $ref: "#/components/schemas/Decimal"
     UserConfig:
       type: object
       properties:
@@ -527,10 +532,7 @@ components:
         shopId:
           $ref: "#/components/schemas/Id"
         quantity:
-          type: object
-          properties:
-            value:
-              $ref: "#/components/schemas/Decimal"
+          $ref: "#/components/schemas/WrappedQuantity"
         fee:
           $ref: "#/components/schemas/Decimal"
         price:
