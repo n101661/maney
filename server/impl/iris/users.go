@@ -15,16 +15,21 @@ import (
 )
 
 func (s *Server) Login(c iris.Context) {
-	var r httpModels.LoginRequestBody
+	var r httpModels.LoginRequest
 	if err := c.ReadJSON(&r); err != nil {
 		c.StatusCode(iris.StatusBadRequest)
 		c.WriteString(err.Error())
 		return
 	}
 
+	if r.Id == "" || r.Password == "" {
+		c.StatusCode(iris.StatusBadRequest)
+		return
+	}
+
 	ctx := c.Request().Context()
 
-	err := s.authService.ValidateUser(ctx, r.ID, r.Password)
+	err := s.authService.ValidateUser(ctx, r.Id, r.Password)
 	if err != nil {
 		if errors.Is(err, authV2.ErrUserNotFoundOrInvalidPassword) {
 			c.StatusCode(iris.StatusUnauthorized)
@@ -36,7 +41,7 @@ func (s *Server) Login(c iris.Context) {
 	}
 
 	accessToken, refreshToken, err := s.generateToken(ctx, &authV2.TokenClaims{
-		UserID: r.ID,
+		UserID: r.Id,
 		Nonce:  s.opts.getNonce(),
 	})
 	if err != nil {
@@ -54,7 +59,7 @@ func (s *Server) Login(c iris.Context) {
 	)
 
 	c.StatusCode(iris.StatusOK)
-	err = c.JSON(&httpModels.LoginResponse{
+	err = c.JSON(&httpModels.AuthenticationResponse{
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -108,17 +113,22 @@ func (s *Server) Logout(c iris.Context) {
 }
 
 func (s *Server) SignUp(c iris.Context) {
-	var r httpModels.SignUpRequestBody
+	var r httpModels.SignUpRequest
 	if err := c.ReadJSON(&r); err != nil {
 		c.StatusCode(iris.StatusBadRequest)
 		c.WriteString(err.Error())
 		return
 	}
 
+	if r.Id == "" || r.Password == "" {
+		c.StatusCode(iris.StatusBadRequest)
+		return
+	}
+
 	ctx := c.Request().Context()
 
 	err := s.authService.CreateUser(ctx, &models.User{
-		ID:       r.ID,
+		ID:       r.Id,
 		Password: r.Password,
 	})
 	if err != nil {

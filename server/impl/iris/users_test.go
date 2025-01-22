@@ -37,8 +37,8 @@ func TestServer_Login(t *testing.T) {
 			_, httpExpect := NewTest(t, WithNonceGenerator(nonceGenerator))
 			return &Vars{httpExpect: httpExpect}
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
-				ID:       "",
+			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequest{
+				Id:       "",
 				Password: "password",
 			}).Expect()
 		}).Assert(func(v *Vars, expect *httpexpect.Response) {
@@ -50,8 +50,8 @@ func TestServer_Login(t *testing.T) {
 			_, httpExpect := NewTest(t, WithNonceGenerator(nonceGenerator))
 			return &Vars{httpExpect: httpExpect}
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
-				ID:       "id",
+			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequest{
+				Id:       "id",
 				Password: "",
 			}).Expect()
 		}).Assert(func(v *Vars, expect *httpexpect.Response) {
@@ -73,8 +73,8 @@ func TestServer_Login(t *testing.T) {
 
 			return vars
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
-				ID:       v.userID,
+			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequest{
+				Id:       v.userID,
 				Password: v.password,
 			}).Expect()
 		}).Assert(func(v *Vars, expect *httpexpect.Response) {
@@ -112,13 +112,13 @@ func TestServer_Login(t *testing.T) {
 
 			return vars
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequestBody{
-				ID:       v.userID,
+			return v.httpExpect.POST(path).WithJSON(httpModels.LoginRequest{
+				Id:       v.userID,
 				Password: v.password,
 			}).Expect()
 		}).Assert(func(v *Vars, expect *httpexpect.Response) {
 			expect.Status(httptest.StatusOK)
-			expect.JSON().IsEqual(httpModels.LoginResponse{
+			expect.JSON().IsEqual(httpModels.AuthenticationResponse{
 				AccessToken: v.accessTokenID,
 			})
 
@@ -193,21 +193,21 @@ func TestServer_SignUp(t *testing.T) {
 	t.Run("missing required field of request", func(t *testing.T) {
 		type Test struct {
 			Name    string
-			Request httpModels.SignUpRequestBody
+			Request httpModels.SignUpRequest
 		}
 
 		testCases := []Test{
 			{
 				Name: "missing id",
-				Request: httpModels.SignUpRequestBody{
-					ID:       "",
+				Request: httpModels.SignUpRequest{
+					Id:       "",
 					Password: "password",
 				},
 			},
 			{
 				Name: "missing password",
-				Request: httpModels.SignUpRequestBody{
-					ID:       "id",
+				Request: httpModels.SignUpRequest{
+					Id:       "id",
 					Password: "",
 				},
 			},
@@ -217,13 +217,13 @@ func TestServer_SignUp(t *testing.T) {
 				aaa.Arrange(func() *Vars {
 					_, httpExpect := NewTest(t)
 					return &Vars{
-						userID:     c.Request.ID,
+						userID:     c.Request.Id,
 						password:   c.Request.Password,
 						httpExpect: httpExpect,
 					}
 				}).Act(func(v *Vars) *httpexpect.Response {
-					return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequestBody{
-						ID:       v.userID,
+					return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequest{
+						Id:       v.userID,
 						Password: v.password,
 					}).Expect()
 				}).Assert(func(v *Vars, expect *httpexpect.Response) {
@@ -248,8 +248,8 @@ func TestServer_SignUp(t *testing.T) {
 
 			return vars
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequestBody{
-				ID:       v.userID,
+			return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequest{
+				Id:       v.userID,
 				Password: v.password,
 			}).Expect()
 		}).Assert(func(v *Vars, expect *httpexpect.Response) {
@@ -272,8 +272,8 @@ func TestServer_SignUp(t *testing.T) {
 
 			return vars
 		}).Act(func(v *Vars) *httpexpect.Response {
-			return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequestBody{
-				ID:       v.userID,
+			return v.httpExpect.POST(path).WithJSON(httpModels.SignUpRequest{
+				Id:       v.userID,
 				Password: v.password,
 			}).Expect()
 		}).Assert(func(v *Vars, expect *httpexpect.Response) {
