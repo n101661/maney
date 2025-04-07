@@ -425,6 +425,9 @@ components:
           type: boolean
         compareItemsInSameShop:
           type: boolean
+      required:
+        - compareItemsInDifferentShop
+        - compareItemsInSameShop
     Id:
       type: string
       format: uint64
