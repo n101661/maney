@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/n101661/maney/pkg/services/auth/storage"
 	"github.com/n101661/maney/pkg/utils"
+	"github.com/n101661/maney/server/storage"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -70,6 +70,22 @@ func (s *Storage) GetToken(_ context.Context, tokenID string) (*storage.Token, e
 
 func (s *Storage) DeleteToken(_ context.Context, tokenID string) (*storage.Token, error) {
 	return delete[storage.Token](s.db, tokenBucket, tokenID, s.opts)
+}
+
+func (s *Storage) CreateConfig(ctx context.Context, config *storage.UserConfig) (*storage.UserConfig, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (s *Storage) GetConfig(ctx context.Context, id string) (*storage.UserConfig, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (s *Storage) UpdateConfig(ctx context.Context, config *storage.UserConfig) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (s *Storage) DeleteConfig(ctx context.Context, id string) error {
+	return fmt.Errorf("not implemented")
 }
 
 func (s *Storage) Close() error {

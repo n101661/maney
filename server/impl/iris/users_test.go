@@ -12,9 +12,9 @@ import (
 
 	dbModels "github.com/n101661/maney/database/models"
 	"github.com/n101661/maney/pkg/models"
-	authV2 "github.com/n101661/maney/pkg/services/auth"
 	"github.com/n101661/maney/pkg/testing/aaa"
 	httpModels "github.com/n101661/maney/server/models"
+	authV2 "github.com/n101661/maney/server/services/auth"
 )
 
 func TestServer_Login(t *testing.T) {

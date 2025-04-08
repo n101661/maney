@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/x/errors"
-	"github.com/n101661/maney/pkg/services/auth"
+	"github.com/n101661/maney/server/services/auth"
 )
 
 func (s *Server) ValidateAccessToken(c *context.Context) {

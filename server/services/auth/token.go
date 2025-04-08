@@ -4,7 +4,7 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
-	"github.com/n101661/maney/pkg/services/auth/storage"
+	"github.com/n101661/maney/server/storage"
 )
 
 type TokenClaims = storage.TokenClaims

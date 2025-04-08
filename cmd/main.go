@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/n101661/maney/pkg/services/auth"
-	"github.com/n101661/maney/pkg/services/auth/storage/bolt"
 	"github.com/n101661/maney/server/impl/iris"
+	"github.com/n101661/maney/server/services/auth"
+	"github.com/n101661/maney/server/storage/bolt"
 )
 
 const configPath = "config.toml"

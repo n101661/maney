@@ -19,6 +19,11 @@ type Storage interface {
 	// DeleteToken deletes the specified token. It returns the deleted token if successful.
 	DeleteToken(ctx context.Context, tokenID string) (*Token, error)
 
+	CreateConfig(ctx context.Context, config *UserConfig) (*UserConfig, error)
+	GetConfig(ctx context.Context, id string) (*UserConfig, error)
+	UpdateConfig(ctx context.Context, config *UserConfig) error
+	DeleteConfig(ctx context.Context, id string) error
+
 	io.Closer
 }
 
@@ -36,4 +41,10 @@ type Token struct {
 type TokenClaims struct {
 	UserID string
 	Nonce  int
+}
+
+type UserConfig struct {
+	ID                          string
+	CompareItemsInDifferentShop bool
+	CompareItemsInSameShop      bool
 }

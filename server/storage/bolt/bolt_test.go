@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/n101661/maney/pkg/services/auth/storage"
+	"github.com/n101661/maney/server/storage"
 	"github.com/stretchr/testify/assert"
 )
 

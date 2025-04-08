@@ -10,10 +10,10 @@ import (
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/middleware/requestid"
 	"github.com/n101661/maney/database"
-	authV2 "github.com/n101661/maney/pkg/services/auth"
 	"github.com/n101661/maney/pkg/utils"
 	"github.com/n101661/maney/server/impl/iris/auth"
 	"github.com/n101661/maney/server/impl/iris/config"
+	authV2 "github.com/n101661/maney/server/services/auth"
 )
 
 type Config struct {

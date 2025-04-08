@@ -12,8 +12,8 @@ import (
 
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/n101661/maney/pkg/models"
-	"github.com/n101661/maney/pkg/services/auth/storage"
 	"github.com/n101661/maney/pkg/utils"
+	"github.com/n101661/maney/server/storage"
 	"golang.org/x/crypto/bcrypt"
 )
 

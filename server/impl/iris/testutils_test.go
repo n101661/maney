@@ -11,8 +11,8 @@ import (
 	"github.com/shopspring/decimal"
 	"go.uber.org/mock/gomock"
 
-	authV2 "github.com/n101661/maney/pkg/services/auth"
 	"github.com/n101661/maney/pkg/utils"
+	authV2 "github.com/n101661/maney/server/services/auth"
 )
 
 type mockService struct {
