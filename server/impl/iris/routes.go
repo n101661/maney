@@ -10,8 +10,8 @@ func (s *Server) registerRoutes() {
 	user := s.app.Party("/", s.userController.ValidateAccessToken)
 
 	{ // user's config
-		user.Put("/config", s.UpdateConfig)
-		user.Get("/config", s.GetConfig)
+		user.Put("/config", s.userController.UpdateUserConfig)
+		user.Get("/config", s.userController.GetUserConfig)
 	}
 	{ // user's accounts
 		user.Post("/accounts", s.CreateAccount)

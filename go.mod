@@ -8,6 +8,7 @@ require (
 	github.com/go-playground/validator/v10 v10.14.1
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/iris-contrib/httpexpect/v2 v2.15.2
 	github.com/iris-contrib/middleware/jwt v0.0.0-20221109225525-f806663b83a0
 	github.com/kataras/iris/v12 v12.2.11
 	github.com/oapi-codegen/runtime v1.1.1
@@ -34,7 +35,6 @@ require (
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/invopop/yaml v0.3.1 // indirect
-	github.com/iris-contrib/httpexpect/v2 v2.15.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect

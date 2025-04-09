@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/n101661/maney/server/models"
 )
 
 // Service errors.
@@ -12,6 +14,7 @@ var (
 	ErrUserNotFoundOrInvalidPassword = errors.New("user not found or invalid password")
 	ErrInvalidToken                  = errors.New("invalid token")
 	ErrTokenExpired                  = errors.New("token is expired")
+	ErrResourceNotFound              = errors.New("resource not found")
 )
 
 type Service interface {
@@ -38,6 +41,14 @@ type Service interface {
 	//  - ErrInvalidToken if the refresh token is invalid
 	//  - ErrTokenExpired if the refresh token is expired
 	ValidateRefreshToken(ctx context.Context, r *ValidateRefreshTokenRequest) (*ValidateRefreshTokenReply, error)
+
+	// UpdateConfig updates the config, it returns:
+	//  - ErrResourceNotFound if the user is not found
+	UpdateConfig(context.Context, *UpdateConfigRequest) (*UpdateConfigReply, error)
+
+	// GetConfig gets the config of the user, it returns:
+	//  - ErrResourceNotFound if the user is not found
+	GetConfig(context.Context, *GetConfigRequest) (*GetConfigReply, error)
 }
 
 type LoginRequest struct {
@@ -78,10 +89,29 @@ type ValidateAccessTokenRequest struct {
 	TokenID string
 }
 
-type ValidateAccessTokenReply struct{}
+type ValidateAccessTokenReply struct {
+	UserID string
+}
 
 type ValidateRefreshTokenRequest struct {
 	TokenID string
 }
 
 type ValidateRefreshTokenReply struct{}
+
+type UpdateConfigRequest struct {
+	UserID string
+	Config *models.UserConfig
+}
+
+type UpdateConfigReply struct{}
+
+type UserConfig = models.UserConfig
+
+type GetConfigRequest struct {
+	UserID string
+}
+
+type GetConfigReply struct {
+	Data *UserConfig
+}

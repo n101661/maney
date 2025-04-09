@@ -213,7 +213,9 @@ func (s *service) ValidateAccessToken(ctx context.Context, r *ValidateAccessToke
 		return nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
 	}
 
-	return &ValidateAccessTokenReply{}, nil
+	return &ValidateAccessTokenReply{
+		UserID: claims.UserID,
+	}, nil
 }
 
 func (s *service) ValidateRefreshToken(ctx context.Context, r *ValidateRefreshTokenRequest) (*ValidateRefreshTokenReply, error) {
@@ -229,6 +231,33 @@ func (s *service) ValidateRefreshToken(ctx context.Context, r *ValidateRefreshTo
 		return &ValidateRefreshTokenReply{}, nil
 	}
 	return nil, ErrTokenExpired
+}
+
+func (s *service) UpdateConfig(ctx context.Context, r *UpdateConfigRequest) (*UpdateConfigReply, error) {
+	err := s.repository.UpdateUser(ctx, &UserModel{
+		ID:     r.UserID,
+		Config: r.Config,
+	})
+	if err != nil {
+		if errors.Is(err, ErrDataNotFound) {
+			return nil, ErrResourceNotFound
+		}
+		return nil, err
+	}
+	return &UpdateConfigReply{}, nil
+}
+
+func (s *service) GetConfig(ctx context.Context, r *GetConfigRequest) (*GetConfigReply, error) {
+	user, err := s.repository.GetUser(ctx, r.UserID)
+	if err != nil {
+		if errors.Is(err, ErrDataNotFound) {
+			return nil, ErrResourceNotFound
+		}
+		return nil, err
+	}
+	return &GetConfigReply{
+		Data: user.Config,
+	}, nil
 }
 
 type serviceOptions struct {

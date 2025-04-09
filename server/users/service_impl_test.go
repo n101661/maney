@@ -214,6 +214,126 @@ func Test_service_SignUp(t *testing.T) {
 	})
 }
 
+func Test_service_UpdateConfig(t *testing.T) {
+	t.Run("update config successful", func(t *testing.T) {
+		assert := assert.New(t)
+
+		const (
+			userID = "user-id"
+		)
+
+		controller := gomock.NewController(t)
+		mockRepo := NewMockRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().UpdateUser(gomock.Any(), &UserModel{
+				ID: userID,
+				Config: &UserConfig{
+					CompareItemsInDifferentShop: false,
+					CompareItemsInSameShop:      true,
+				},
+			}).Return(nil),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.UpdateConfig(context.Background(), &UpdateConfigRequest{
+			UserID: userID,
+			Config: &UserConfig{
+				CompareItemsInDifferentShop: false,
+				CompareItemsInSameShop:      true,
+			},
+		})
+		assert.NoError(err)
+		assert.Equal(&UpdateConfigReply{}, reply)
+	})
+	t.Run("user not found", func(t *testing.T) {
+		assert := assert.New(t)
+
+		controller := gomock.NewController(t)
+		mockRepo := NewMockRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Return(ErrDataNotFound),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.UpdateConfig(context.Background(), &UpdateConfigRequest{
+			UserID: "user-id",
+			Config: &UserConfig{
+				CompareItemsInDifferentShop: false,
+				CompareItemsInSameShop:      true,
+			},
+		})
+		assert.ErrorIs(err, ErrResourceNotFound)
+		assert.Nil(reply)
+	})
+}
+
+func Test_service_GetConfig(t *testing.T) {
+	t.Run("get config successful", func(t *testing.T) {
+		assert := assert.New(t)
+
+		const (
+			userID = "user-id"
+		)
+
+		controller := gomock.NewController(t)
+		mockRepo := NewMockRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().GetUser(gomock.Any(), userID).Return(&UserModel{
+				ID:       userID,
+				Password: []byte("password"),
+				Config: &UserConfig{
+					CompareItemsInDifferentShop: false,
+					CompareItemsInSameShop:      true,
+				},
+			}, nil),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.GetConfig(context.Background(), &GetConfigRequest{
+			UserID: userID,
+		})
+		assert.NoError(err)
+		assert.Equal(&GetConfigReply{
+			Data: &UserConfig{
+				CompareItemsInDifferentShop: false,
+				CompareItemsInSameShop:      true,
+			},
+		}, reply)
+	})
+	t.Run("user not found", func(t *testing.T) {
+		assert := assert.New(t)
+
+		controller := gomock.NewController(t)
+		mockRepo := NewMockRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(nil, ErrDataNotFound),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.GetConfig(context.Background(), &GetConfigRequest{
+			UserID: "user-id",
+		})
+		assert.ErrorIs(err, ErrResourceNotFound)
+		assert.Nil(reply)
+	})
+}
+
 func newService(repo Repository) (Service, error) {
 	return NewService(
 		repo,

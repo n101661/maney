@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	headerAuthorization = "Authorization"
+	HeaderAuthorization = "Authorization"
 )
 
 const (
-	authType = "Bearer"
+	AuthType = "Bearer"
 )
 
 const (
@@ -162,7 +162,7 @@ func (controller *IrisController) ValidateAccessToken(c iris.Context) {
 		return
 	}
 
-	_, err := controller.s.ValidateAccessToken(c.Request().Context(), &ValidateAccessTokenRequest{
+	tokenReply, err := controller.s.ValidateAccessToken(c.Request().Context(), &ValidateAccessTokenRequest{
 		TokenID: accessToken,
 	})
 	if err != nil {
@@ -173,20 +173,86 @@ func (controller *IrisController) ValidateAccessToken(c iris.Context) {
 		}
 		return
 	}
+
+	err = c.SetUser(&user{
+		Token: accessToken,
+		ID:    tokenReply.UserID,
+	})
+	if err != nil {
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
+	}
 }
 
 func (controller *IrisController) getAccessToken(c iris.Context) string {
-	h := c.GetHeader(headerAuthorization)
+	h := c.GetHeader(HeaderAuthorization)
 	if h == "" {
 		return ""
 	}
 
 	frags := strings.SplitN(h, " ", 2)
-	if frags[0] != authType || len(frags) != 2 {
+	if frags[0] != AuthType || len(frags) != 2 {
 		return ""
 	}
 
 	return frags[1]
+}
+
+func (controller *IrisController) UpdateUserConfig(c iris.Context) {
+	var r httpModels.UserConfig
+	if err := c.ReadJSON(&r); err != nil {
+		c.StatusCode(iris.StatusBadRequest)
+		c.WriteString(err.Error())
+		return
+	}
+
+	userID, err := c.User().GetID()
+	if err != nil {
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
+		return
+	}
+
+	_, err = controller.s.UpdateConfig(c.Request().Context(), &UpdateConfigRequest{
+		UserID: userID,
+		Config: &r,
+	})
+	if err != nil {
+		if errors.Is(err, ErrResourceNotFound) {
+			c.StatusCode(iris.StatusBadRequest)
+			return
+		}
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
+		return
+	}
+
+	c.StatusCode(iris.StatusOK)
+}
+
+func (controller *IrisController) GetUserConfig(c iris.Context) {
+	userID, err := c.User().GetID()
+	if err != nil {
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
+		return
+	}
+
+	reply, err := controller.s.GetConfig(c.Request().Context(), &GetConfigRequest{
+		UserID: userID,
+	})
+	if err != nil {
+		if errors.Is(err, ErrResourceNotFound) {
+			c.StatusCode(iris.StatusBadRequest)
+			return
+		}
+		c.StatusCode(iris.StatusInternalServerError)
+		c.WriteString(err.Error())
+		return
+	}
+
+	c.StatusCode(iris.StatusOK)
+	c.JSON(reply.Data)
 }
 
 type irisControllerOptions struct {
@@ -197,4 +263,25 @@ func WithLogger(logger *golog.Logger) utils.Option[irisControllerOptions] {
 	return func(o *irisControllerOptions) {
 		o.logger = logger
 	}
+}
+
+type user struct {
+	Token string
+	ID    string
+}
+
+func (u *user) GetRaw() (interface{}, error) {
+	return u, nil
+}
+
+func (u *user) GetAuthorization() (string, error) {
+	return AuthType, nil
+}
+
+func (u *user) GetID() (string, error) {
+	return u.ID, nil
+}
+
+func (u *user) GetToken() ([]byte, error) {
+	return []byte(u.Token), nil
 }

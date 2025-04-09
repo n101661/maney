@@ -38,11 +38,6 @@ type UserModel struct {
 	Config   *UserConfig
 }
 
-type UserConfig struct {
-	CompareItemsInDifferentShop bool
-	CompareItemsInSameShop      bool
-}
-
 type TokenModel struct {
 	ID         string
 	Claim      *TokenClaims
