@@ -2,12 +2,13 @@ package users
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
+	"github.com/kataras/golog"
 	"github.com/kataras/iris/v12"
 
+	"github.com/n101661/maney/pkg/utils"
 	httpModels "github.com/n101661/maney/server/models"
 )
 
@@ -29,11 +30,14 @@ const (
 
 type IrisController struct {
 	s Service
+
+	opts *irisControllerOptions
 }
 
-func NewIrisController(s Service) *IrisController {
+func NewIrisController(s Service, opts ...utils.Option[irisControllerOptions]) *IrisController {
 	return &IrisController{
-		s: s,
+		s:    s,
+		opts: utils.ApplyOptions(&irisControllerOptions{}, opts),
 	}
 }
 
@@ -78,8 +82,8 @@ func (controller *IrisController) Login(c iris.Context) {
 	err = c.JSON(&httpModels.AuthenticationResponse{
 		AccessToken: reply.AccessToken.ID,
 	})
-	if err != nil {
-		log.Printf("failed to response: %v\n", err)
+	if err != nil && controller.opts.logger != nil {
+		controller.opts.logger.Warnf("failed to response of Login: %v", err)
 	}
 }
 
@@ -168,5 +172,15 @@ func (controller *IrisController) ValidateAccessToken(c iris.Context) {
 			c.StopWithError(iris.StatusInternalServerError, err)
 		}
 		return
+	}
+}
+
+type irisControllerOptions struct {
+	logger *golog.Logger
+}
+
+func WithLogger(logger *golog.Logger) utils.Option[irisControllerOptions] {
+	return func(o *irisControllerOptions) {
+		o.logger = logger
 	}
 }
