@@ -70,7 +70,7 @@ func Test_boltRepository(t *testing.T) {
 		token, err := s.GetToken(context.Background(), "token")
 		assert.NoError(t, err)
 
-		// Ignore the expiry time because it depends on the unmarshalling function.
+		// Ignore the expiry time because it depends on the unmarshaling function.
 		token.ExpiryTime = time.Time{}
 		assert.Equal(t, &TokenModel{
 			ID: "token",
@@ -89,7 +89,7 @@ func Test_boltRepository(t *testing.T) {
 		token, err := s.DeleteToken(context.Background(), "token")
 		assert.NoError(t, err)
 
-		// Ignore the expiry time because it depends on the unmarshalling function.
+		// Ignore the expiry time because it depends on the unmarshaling function.
 		token.ExpiryTime = time.Time{}
 		assert.Equal(t, &TokenModel{
 			ID: "token",
