@@ -1,4 +1,4 @@
-package bolt
+package users
 
 import (
 	"context"
@@ -6,14 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/n101661/maney/server/storage"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStorage(t *testing.T) {
+func Test_boltRepository(t *testing.T) {
 	const dbPath = "test.db"
 
-	s, err := New(dbPath)
+	s, err := NewBoltRepository(dbPath)
 	if err != nil {
 		panic(err)
 	}
@@ -23,21 +22,21 @@ func TestStorage(t *testing.T) {
 	}()
 
 	t.Run("create the user successful", func(t *testing.T) {
-		assert.NoError(t, s.CreateUser(context.Background(), &storage.User{
+		assert.NoError(t, s.CreateUser(context.Background(), &UserModel{
 			ID:       "tester",
 			Password: []byte("password"),
 		}))
 	})
 	t.Run("create existing user failed", func(t *testing.T) {
-		assert.ErrorIs(t, s.CreateUser(context.Background(), &storage.User{
+		assert.ErrorIs(t, s.CreateUser(context.Background(), &UserModel{
 			ID:       "tester",
 			Password: []byte("password-2"),
-		}), storage.ErrExists)
+		}), ErrDataExists)
 	})
 	t.Run("get the user successful", func(t *testing.T) {
 		user, err := s.GetUser(context.Background(), "tester")
 		assert.NoError(t, err)
-		assert.Equal(t, &storage.User{
+		assert.Equal(t, &UserModel{
 			ID:       "tester",
 			Password: []byte("password"),
 		}, user)
@@ -45,12 +44,12 @@ func TestStorage(t *testing.T) {
 	t.Run("get non-existing user failed", func(t *testing.T) {
 		user, err := s.GetUser(context.Background(), "tester-2")
 		assert.Nil(t, user)
-		assert.ErrorIs(t, err, storage.ErrNotFound)
+		assert.ErrorIs(t, err, ErrDataNotFound)
 	})
 	t.Run("create the token successful", func(t *testing.T) {
-		assert.NoError(t, s.CreateToken(context.Background(), &storage.Token{
+		assert.NoError(t, s.CreateToken(context.Background(), &TokenModel{
 			ID: "token",
-			Claim: &storage.TokenClaims{
+			Claim: &TokenClaims{
 				UserID: "tester",
 				Nonce:  0,
 			},
@@ -58,14 +57,14 @@ func TestStorage(t *testing.T) {
 		}))
 	})
 	t.Run("create existing token failed", func(t *testing.T) {
-		assert.ErrorIs(t, s.CreateToken(context.Background(), &storage.Token{
+		assert.ErrorIs(t, s.CreateToken(context.Background(), &TokenModel{
 			ID: "token",
-			Claim: &storage.TokenClaims{
+			Claim: &TokenClaims{
 				UserID: "tester-2",
 				Nonce:  0,
 			},
 			ExpiryTime: time.Now(),
-		}), storage.ErrExists)
+		}), ErrDataExists)
 	})
 	t.Run("get the token successful", func(t *testing.T) {
 		token, err := s.GetToken(context.Background(), "token")
@@ -73,9 +72,9 @@ func TestStorage(t *testing.T) {
 
 		// Ignore the expiry time because it depends on the unmarshalling function.
 		token.ExpiryTime = time.Time{}
-		assert.Equal(t, &storage.Token{
+		assert.Equal(t, &TokenModel{
 			ID: "token",
-			Claim: &storage.TokenClaims{
+			Claim: &TokenClaims{
 				UserID: "tester",
 				Nonce:  0,
 			},
@@ -84,7 +83,7 @@ func TestStorage(t *testing.T) {
 	t.Run("get non-existing token failed", func(t *testing.T) {
 		token, err := s.GetToken(context.Background(), "token-2")
 		assert.Nil(t, token)
-		assert.ErrorIs(t, err, storage.ErrNotFound)
+		assert.ErrorIs(t, err, ErrDataNotFound)
 	})
 	t.Run("delete the token successful", func(t *testing.T) {
 		token, err := s.DeleteToken(context.Background(), "token")
@@ -92,9 +91,9 @@ func TestStorage(t *testing.T) {
 
 		// Ignore the expiry time because it depends on the unmarshalling function.
 		token.ExpiryTime = time.Time{}
-		assert.Equal(t, &storage.Token{
+		assert.Equal(t, &TokenModel{
 			ID: "token",
-			Claim: &storage.TokenClaims{
+			Claim: &TokenClaims{
 				UserID: "tester",
 				Nonce:  0,
 			},

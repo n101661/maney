@@ -3,11 +3,11 @@ package iris
 func (s *Server) registerRoutes() {
 
 	s.app.Post("/auth/refresh")
-	s.app.Post("/login", s.Login)
-	s.app.Post("/auth/logout", s.Logout)
-	s.app.Post("/sign-up", s.SignUp)
+	s.app.Post("/login", s.userController.Login)
+	s.app.Post("/auth/logout", s.userController.Logout)
+	s.app.Post("/sign-up", s.userController.SignUp)
 
-	user := s.app.Party("/", s.ValidateAccessToken)
+	user := s.app.Party("/", s.userController.ValidateAccessToken)
 
 	{ // user's config
 		user.Put("/config", s.UpdateConfig)

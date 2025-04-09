@@ -1,6 +1,7 @@
 mock: install-mock
 	find . -type f -name *_mock.go -delete
-	mockgen -source=./server/services/auth/service.go -destination=./server/services/auth/service_mock.go -package=auth
+	mockgen -source=./server/users/service.go -destination=./server/users/service_mock.go -package=users
+	mockgen -source=./server/users/repository.go -destination=./server/users/repository_mock.go -package=users
 
 models: install-openapi-codegen
 	@find . -type f -name *_gen.go -delete; \

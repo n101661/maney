@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/n101661/maney/server/impl/iris"
-	"github.com/n101661/maney/server/services/auth"
-	"github.com/n101661/maney/server/storage/bolt"
+	"github.com/n101661/maney/server/users"
 )
 
 const configPath = "config.toml"
@@ -27,27 +26,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	authStorage, err := bolt.New(config.Auth.BoltDBPath)
+	authStorage, err := users.NewBoltRepository(config.Auth.BoltDBPath)
 	if err != nil {
 		fmt.Printf("failed to initial the storage of the authentication service: %v", err)
 		os.Exit(1)
 	}
 	defer authStorage.Close()
 
-	authService, err := auth.NewService(
+	userService, err := users.NewService(
 		authStorage,
 		[]byte(config.Auth.RefreshTokenSigningKey),
 		[]byte(config.Auth.AccessTokenSigningKey),
-		auth.WithRefreshTokenExpireAfter(time.Duration(config.Auth.RefreshTokenExpireAfter)),
-		auth.WithAccessTokenExpireAfter(time.Duration(config.Auth.AccessTokenExpireAfter)),
-		auth.WithSaltPasswordRound(config.Auth.SaltPasswordRound),
+		users.WithRefreshTokenExpireAfter(time.Duration(config.Auth.RefreshTokenExpireAfter)),
+		users.WithAccessTokenExpireAfter(time.Duration(config.Auth.AccessTokenExpireAfter)),
+		users.WithSaltPasswordRound(config.Auth.SaltPasswordRound),
 	)
 	if err != nil {
-		fmt.Printf("failed to initial the authentication service: %v", err)
+		fmt.Printf("failed to initial the user service: %v", err)
 		os.Exit(1)
 	}
+	userController := users.NewIrisController(userService)
 
-	s := iris.NewServer(config.App.Config, authService)
+	s := iris.NewServer(config.App.Config, userController)
 	if err := s.ListenAndServe(fmt.Sprintf("%s:%d", config.App.Host, config.App.Port)); err != nil {
 		fmt.Printf("failed to listen and serve: %v", err)
 		os.Exit(1)

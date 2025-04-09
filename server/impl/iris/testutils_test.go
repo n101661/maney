@@ -6,28 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/iris-contrib/httpexpect/v2"
-	"github.com/kataras/iris/v12/httptest"
 	"github.com/shopspring/decimal"
-	"go.uber.org/mock/gomock"
-
-	"github.com/n101661/maney/pkg/utils"
-	authV2 "github.com/n101661/maney/server/services/auth"
 )
-
-type mockService struct {
-	auth *authV2.MockService
-}
-
-func NewTest(t *testing.T, opts ...utils.Option[options]) (*mockService, *httpexpect.Expect) {
-	controller := gomock.NewController(t)
-
-	mockAuth := authV2.NewMockService(controller)
-
-	return &mockService{
-		auth: mockAuth,
-	}, httptest.New(t, NewServer(&Config{}, mockAuth, opts...).app)
-}
 
 const serverAddr = "localhost:8080"
 
