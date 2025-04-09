@@ -51,7 +51,7 @@ func (s *service) Login(ctx context.Context, r *LoginRequest) (*LoginReply, erro
 		return nil, err
 	}
 
-	accessToken, err := s.generateAccessToken(ctx, &TokenClaims{
+	accessToken, err := s.generateAccessToken(&TokenClaims{
 		UserID: r.UserID,
 		Nonce:  s.opts.getNonce(),
 	})
@@ -97,7 +97,7 @@ type accessTokenClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (s *service) generateAccessToken(ctx context.Context, claim *TokenClaims) (*Token, error) {
+func (s *service) generateAccessToken(claim *TokenClaims) (*Token, error) {
 	token := jwt.NewWithClaims(s.opts.accessTokenSigningMethod, accessTokenClaims{
 		UserID: claim.UserID,
 		RegisteredClaims: jwt.RegisteredClaims{
