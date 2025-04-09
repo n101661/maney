@@ -61,7 +61,40 @@ func (s *boltRepository) GetUser(_ context.Context, userID string) (*UserModel, 
 }
 
 func (s *boltRepository) UpdateUser(_ context.Context, user *UserModel) error {
-	return fmt.Errorf("not implemented")
+	if user.Password == nil && user.Config == nil {
+		return fmt.Errorf("no fields to update")
+	}
+
+	return s.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(userBucket))
+		if bucket == nil {
+			return fmt.Errorf("bucket %s not found", userBucket)
+		}
+
+		data := bucket.Get([]byte(user.ID))
+		if data == nil {
+			return ErrDataNotFound
+		}
+
+		var current UserModel
+		if err := s.opts.unmarshalValue(data, &current); err != nil {
+			return fmt.Errorf("failed to unmarshal existing user: %w", err)
+		}
+
+		if user.Password != nil {
+			current.Password = user.Password
+		}
+		if user.Config != nil {
+			current.Config = user.Config
+		}
+
+		data, err := s.opts.marshalValue(&current)
+		if err != nil {
+			return fmt.Errorf("failed to marshal updated user: %w", err)
+		}
+
+		return bucket.Put([]byte(user.ID), data)
+	})
 }
 
 func (s *boltRepository) CreateToken(_ context.Context, token *TokenModel) error {

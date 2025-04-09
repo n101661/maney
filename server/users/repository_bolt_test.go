@@ -21,29 +21,69 @@ func Test_boltRepository(t *testing.T) {
 		assert.NoError(t, os.Remove(dbPath))
 	}()
 
+	const (
+		userID   = "tester"
+		password = "password"
+	)
+
 	t.Run("create the user successful", func(t *testing.T) {
 		assert.NoError(t, s.CreateUser(context.Background(), &UserModel{
-			ID:       "tester",
-			Password: []byte("password"),
+			ID:       userID,
+			Password: []byte(password),
+			Config:   &UserConfig{},
 		}))
 	})
 	t.Run("create existing user failed", func(t *testing.T) {
 		assert.ErrorIs(t, s.CreateUser(context.Background(), &UserModel{
-			ID:       "tester",
+			ID:       userID,
 			Password: []byte("password-2"),
+			Config:   &UserConfig{},
 		}), ErrDataExists)
 	})
 	t.Run("get the user successful", func(t *testing.T) {
-		user, err := s.GetUser(context.Background(), "tester")
+		user, err := s.GetUser(context.Background(), userID)
 		assert.NoError(t, err)
 		assert.Equal(t, &UserModel{
-			ID:       "tester",
-			Password: []byte("password"),
+			ID:       userID,
+			Password: []byte(password),
+			Config:   &UserConfig{},
 		}, user)
 	})
 	t.Run("get non-existing user failed", func(t *testing.T) {
-		user, err := s.GetUser(context.Background(), "tester-2")
+		user, err := s.GetUser(context.Background(), "not found"+userID)
 		assert.Nil(t, user)
+		assert.ErrorIs(t, err, ErrDataNotFound)
+	})
+	t.Run("update the user successful", func(t *testing.T) {
+		const newPassword = "new" + password
+
+		err := s.UpdateUser(context.Background(), &UserModel{
+			ID:       userID,
+			Password: []byte(newPassword),
+			Config: &UserConfig{
+				CompareItemsInDifferentShop: true,
+				CompareItemsInSameShop:      true,
+			},
+		})
+		assert.NoError(t, err)
+
+		updatedUser, err := s.GetUser(context.Background(), userID)
+		assert.NoError(t, err)
+		assert.Equal(t, &UserModel{
+			ID:       userID,
+			Password: []byte(newPassword),
+			Config: &UserConfig{
+				CompareItemsInDifferentShop: true,
+				CompareItemsInSameShop:      true,
+			},
+		}, updatedUser)
+	})
+	t.Run("update non-existing user", func(t *testing.T) {
+		err := s.UpdateUser(context.Background(), &UserModel{
+			ID:       "not found" + userID,
+			Password: []byte(password),
+			Config:   &UserConfig{},
+		})
 		assert.ErrorIs(t, err, ErrDataNotFound)
 	})
 	t.Run("create the token successful", func(t *testing.T) {
