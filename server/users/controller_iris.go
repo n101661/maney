@@ -156,20 +156,14 @@ func (controller *IrisController) SignUp(c iris.Context) {
 }
 
 func (controller *IrisController) ValidateAccessToken(c iris.Context) {
-	h := c.GetHeader(headerAuthorization)
-	if h == "" {
-		c.StopWithStatus(iris.StatusUnauthorized)
-		return
-	}
-
-	frags := strings.SplitN(h, " ", 2)
-	if frags[0] != authType || len(frags) != 2 {
+	accessToken := controller.getAccessToken(c)
+	if accessToken == "" {
 		c.StopWithStatus(iris.StatusUnauthorized)
 		return
 	}
 
 	_, err := controller.s.ValidateAccessToken(c.Request().Context(), &ValidateAccessTokenRequest{
-		TokenID: frags[1],
+		TokenID: accessToken,
 	})
 	if err != nil {
 		if errors.Is(err, ErrInvalidToken) || errors.Is(err, ErrTokenExpired) {
@@ -179,6 +173,20 @@ func (controller *IrisController) ValidateAccessToken(c iris.Context) {
 		}
 		return
 	}
+}
+
+func (controller *IrisController) getAccessToken(c iris.Context) string {
+	h := c.GetHeader(headerAuthorization)
+	if h == "" {
+		return ""
+	}
+
+	frags := strings.SplitN(h, " ", 2)
+	if frags[0] != authType || len(frags) != 2 {
+		return ""
+	}
+
+	return frags[1]
 }
 
 type irisControllerOptions struct {
