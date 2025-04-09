@@ -162,8 +162,17 @@ func (s *service) Logout(ctx context.Context, r *LogoutRequest) (*LogoutReply, e
 }
 
 func (s *service) revokeRefreshToken(ctx context.Context, tokenID string) error {
-	_, err := s.repository.DeleteToken(ctx, tokenID)
-	return err
+	token, err := s.repository.DeleteToken(ctx, tokenID)
+	if err != nil {
+		if errors.Is(err, ErrDataNotFound) {
+			return ErrInvalidToken
+		}
+		return err
+	}
+	if time.Now().After(token.ExpiryTime) {
+		return ErrTokenExpired
+	}
+	return nil
 }
 
 func (s *service) SignUp(ctx context.Context, r *SignUpRequest) (*SignUpReply, error) {

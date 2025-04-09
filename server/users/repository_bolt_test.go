@@ -101,7 +101,7 @@ func Test_boltRepository(t *testing.T) {
 	})
 	t.Run("delete non-existing token successful", func(t *testing.T) {
 		token, err := s.DeleteToken(context.Background(), "token-2")
-		assert.NoError(t, err)
-		assert.Empty(t, token)
+		assert.ErrorIs(t, err, ErrDataNotFound)
+		assert.Nil(t, token)
 	})
 }

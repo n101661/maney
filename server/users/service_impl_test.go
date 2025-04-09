@@ -126,7 +126,7 @@ func Test_service_Logout(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := NewMockRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(&TokenModel{}, nil),
+			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(nil, ErrDataNotFound),
 		)
 
 		s, err := newService(mockRepo)
@@ -137,7 +137,34 @@ func Test_service_Logout(t *testing.T) {
 		reply, err := s.Logout(context.Background(), &LogoutRequest{
 			RefreshTokenID: "refresh-token-id",
 		})
-		assert.NoError(err)
+		assert.ErrorIs(err, ErrInvalidToken)
+		assert.Equal(&LogoutReply{}, reply)
+	})
+	t.Run("token is expired", func(t *testing.T) {
+		assert := assert.New(t)
+
+		controller := gomock.NewController(t)
+		mockRepo := NewMockRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(&TokenModel{
+				ID: "token",
+				Claim: &TokenClaims{
+					UserID: "user-id",
+					Nonce:  0,
+				},
+				ExpiryTime: time.Now().Add(-time.Hour),
+			}, nil),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.Logout(context.Background(), &LogoutRequest{
+			RefreshTokenID: "refresh-token-id",
+		})
+		assert.ErrorIs(err, ErrTokenExpired)
 		assert.Equal(&LogoutReply{}, reply)
 	})
 }

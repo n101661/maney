@@ -26,7 +26,7 @@ type Repository interface {
 	CreateToken(ctx context.Context, token *TokenModel) error
 	// GetToken returns the specified token. It returns ErrDataNotFound if the token does not exist.
 	GetToken(ctx context.Context, tokenID string) (*TokenModel, error)
-	// DeleteToken deletes the specified token. It returns the deleted token if successful.
+	// DeleteToken deletes the specified token. It returns ErrDataNotFound if the token does not exist.
 	DeleteToken(ctx context.Context, tokenID string) (*TokenModel, error)
 
 	io.Closer

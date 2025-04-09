@@ -131,7 +131,7 @@ func delete[T any](db *bolt.DB, bucketID, key string, opts *boltOptions) (*T, er
 
 		data := bucket.Get([]byte(key))
 		if data == nil {
-			return nil
+			return ErrDataNotFound
 		}
 
 		if err := opts.unmarshalValue(data, &value); err != nil {

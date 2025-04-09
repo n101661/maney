@@ -102,8 +102,14 @@ func (controller *IrisController) Logout(c iris.Context) {
 		RefreshTokenID: cookie.Value,
 	})
 	if err != nil {
-		c.StatusCode(iris.StatusInternalServerError)
-		return
+		if !(errors.Is(err, ErrInvalidToken) || errors.Is(err, ErrTokenExpired)) {
+			c.StatusCode(iris.StatusInternalServerError)
+			return
+		}
+
+		if controller.opts.logger != nil {
+			controller.opts.logger.Warnf("receive unexpected token[%s] when revoking: %v", cookie.Value, err)
+		}
 	}
 
 	c.SetCookieKV(

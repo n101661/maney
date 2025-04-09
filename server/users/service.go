@@ -20,6 +20,9 @@ type Service interface {
 	// If the user is valid it returns a LoginResponse with the access and refresh tokens.
 	Login(ctx context.Context, r *LoginRequest) (*LoginReply, error)
 
+	// Logout revokes the token. It returns:
+	//  - ErrInvalidToken if the token is invalid
+	//  - ErrTokenExpired if the token is expired
 	Logout(ctx context.Context, r *LogoutRequest) (*LogoutReply, error)
 
 	// SignUp creates a new user with the given data. If the user already exists it returns
