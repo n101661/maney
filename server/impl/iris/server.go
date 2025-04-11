@@ -11,6 +11,7 @@ import (
 	"github.com/n101661/maney/database"
 	"github.com/n101661/maney/server/impl/iris/auth"
 	"github.com/n101661/maney/server/impl/iris/config"
+	"github.com/n101661/maney/server/middleware"
 	"github.com/n101661/maney/server/users"
 )
 
@@ -76,6 +77,8 @@ func newIrisApplication(config *Config) *iris.Application {
 		ExtractOriginFunc(cors.DefaultOriginExtractor).
 		AllowOrigins(allowedOrigins...).
 		Handler())
+
+	app.UseError(middleware.ErrorHandler)
 
 	return app
 }

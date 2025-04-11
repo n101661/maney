@@ -65,8 +65,7 @@ func (controller *IrisController) Login(c iris.Context) {
 			c.StatusCode(iris.StatusUnauthorized)
 			return
 		}
-		c.StatusCode(iris.StatusInternalServerError)
-		c.WriteString(err.Error())
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
 
@@ -94,7 +93,7 @@ func (controller *IrisController) Logout(c iris.Context) {
 			c.StatusCode(iris.StatusOK)
 			return
 		}
-		c.StatusCode(iris.StatusInternalServerError)
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
 
@@ -103,7 +102,7 @@ func (controller *IrisController) Logout(c iris.Context) {
 	})
 	if err != nil {
 		if !(errors.Is(err, ErrInvalidToken) || errors.Is(err, ErrTokenExpired)) {
-			c.StatusCode(iris.StatusInternalServerError)
+			c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 			return
 		}
 
@@ -148,7 +147,7 @@ func (controller *IrisController) SignUp(c iris.Context) {
 			c.WriteString("the user id has existed")
 			return
 		}
-		c.StatusCode(iris.StatusInternalServerError)
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
 
@@ -179,8 +178,7 @@ func (controller *IrisController) ValidateAccessToken(c iris.Context) {
 		ID:    tokenReply.UserID,
 	})
 	if err != nil {
-		c.StatusCode(iris.StatusInternalServerError)
-		c.WriteString(err.Error())
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 	}
 }
 
@@ -208,8 +206,7 @@ func (controller *IrisController) UpdateUserConfig(c iris.Context) {
 
 	userID, err := c.User().GetID()
 	if err != nil {
-		c.StatusCode(iris.StatusInternalServerError)
-		c.WriteString(err.Error())
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
 
@@ -222,8 +219,7 @@ func (controller *IrisController) UpdateUserConfig(c iris.Context) {
 			c.StatusCode(iris.StatusBadRequest)
 			return
 		}
-		c.StatusCode(iris.StatusInternalServerError)
-		c.WriteString(err.Error())
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
 
@@ -233,8 +229,7 @@ func (controller *IrisController) UpdateUserConfig(c iris.Context) {
 func (controller *IrisController) GetUserConfig(c iris.Context) {
 	userID, err := c.User().GetID()
 	if err != nil {
-		c.StatusCode(iris.StatusInternalServerError)
-		c.WriteString(err.Error())
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
 
@@ -246,8 +241,7 @@ func (controller *IrisController) GetUserConfig(c iris.Context) {
 			c.StatusCode(iris.StatusBadRequest)
 			return
 		}
-		c.StatusCode(iris.StatusInternalServerError)
-		c.WriteString(err.Error())
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
 
