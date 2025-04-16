@@ -27,15 +27,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	authStorage, err := users.NewBoltRepository(filepath.Join(config.Auth.BoltDBDir, "users.db"))
+	userRepo, err := users.NewBoltRepository(filepath.Join(config.Auth.BoltDBDir, "users.db"))
 	if err != nil {
-		fmt.Printf("failed to initial the storage of the authentication service: %v", err)
+		fmt.Printf("failed to initial user repository: %v", err)
 		os.Exit(1)
 	}
-	defer authStorage.Close()
+	defer userRepo.Close()
 
 	userService, err := users.NewService(
-		authStorage,
+		userRepo,
 		[]byte(config.Auth.RefreshTokenSigningKey),
 		[]byte(config.Auth.AccessTokenSigningKey),
 		users.WithRefreshTokenExpireAfter(time.Duration(config.Auth.RefreshTokenExpireAfter)),
