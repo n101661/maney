@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
+	"github.com/n101661/maney/pkg/utils"
 	"github.com/n101661/maney/server/internal/repository"
 )
 
@@ -216,6 +217,189 @@ func Test_service_SignUp(t *testing.T) {
 	})
 }
 
+func Test_service_ValidateAccessToken(t *testing.T) {
+	getToken := func(t *testing.T, opts ...utils.Option[serviceOptions]) (access *Token, err error) {
+		const (
+			userID   = "user-id"
+			password = "password"
+		)
+
+		controller := gomock.NewController(t)
+		mockRepo := repository.NewMockUserRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(&repository.UserModel{
+				ID:       userID,
+				Password: lo.Must(encryptPassword(password, defaultOptions().saltPasswordRound)),
+			}, nil),
+			mockRepo.EXPECT().CreateToken(gomock.Any(), gomock.Any()).Return(nil),
+		)
+
+		s, err := newService(mockRepo, opts...)
+		if err != nil {
+			return nil, err
+		}
+
+		reply, err := s.Login(context.Background(), &LoginRequest{
+			UserID:   userID,
+			Password: password,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return reply.AccessToken, nil
+	}
+
+	t.Run("validate successful", func(t *testing.T) {
+		assert := assert.New(t)
+
+		token, err := getToken(t)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		controller := gomock.NewController(t)
+		mockRepo := repository.NewMockUserRepository(controller)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.ValidateAccessToken(context.Background(), &ValidateAccessTokenRequest{
+			TokenID: token.ID,
+		})
+		assert.NoError(err)
+		assert.Equal(&ValidateAccessTokenReply{
+			UserID: token.Claims.UserID,
+		}, reply)
+	})
+	t.Run("invalid token", func(t *testing.T) {
+		assert := assert.New(t)
+
+		controller := gomock.NewController(t)
+		mockRepo := repository.NewMockUserRepository(controller)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.ValidateAccessToken(context.Background(), &ValidateAccessTokenRequest{
+			TokenID: "invalid token",
+		})
+		assert.ErrorIs(err, ErrInvalidToken)
+		assert.Nil(reply)
+	})
+	t.Run("token expired", func(t *testing.T) {
+		assert := assert.New(t)
+
+		token, err := getToken(t, WithAccessTokenExpireAfter(-time.Hour))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		controller := gomock.NewController(t)
+		mockRepo := repository.NewMockUserRepository(controller)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.ValidateAccessToken(context.Background(), &ValidateAccessTokenRequest{
+			TokenID: token.ID,
+		})
+		assert.ErrorIs(err, ErrTokenExpired)
+		assert.Nil(reply)
+	})
+}
+
+func Test_service_ValidateRefreshToken(t *testing.T) {
+	t.Run("validate successful", func(t *testing.T) {
+		const (
+			tokenID = "my-token"
+			userID  = "user-id"
+		)
+
+		assert := assert.New(t)
+
+		controller := gomock.NewController(t)
+		mockRepo := repository.NewMockUserRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().GetToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
+				ID: tokenID,
+				Claim: &repository.TokenClaims{
+					UserID: userID,
+					Nonce:  0,
+				},
+				ExpiryTime: time.Now().Add(time.Hour),
+			}, nil),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.ValidateRefreshToken(context.Background(), &ValidateRefreshTokenRequest{
+			TokenID: tokenID,
+		})
+		assert.NoError(err)
+		assert.Equal(&ValidateRefreshTokenReply{}, reply)
+	})
+	t.Run("invalid token", func(t *testing.T) {
+		assert := assert.New(t)
+
+		controller := gomock.NewController(t)
+		mockRepo := repository.NewMockUserRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().GetToken(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.ValidateRefreshToken(context.Background(), &ValidateRefreshTokenRequest{
+			TokenID: "invalid-token",
+		})
+		assert.ErrorIs(err, ErrInvalidToken)
+		assert.Nil(reply)
+	})
+	t.Run("token expiry", func(t *testing.T) {
+		const (
+			tokenID = "token-id"
+		)
+
+		assert := assert.New(t)
+
+		controller := gomock.NewController(t)
+		mockRepo := repository.NewMockUserRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().GetToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
+				ID: tokenID,
+				Claim: &repository.TokenClaims{
+					UserID: "user-id",
+					Nonce:  0,
+				},
+				ExpiryTime: time.Now().Add(-time.Hour),
+			}, nil),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.ValidateRefreshToken(context.Background(), &ValidateRefreshTokenRequest{
+			TokenID: tokenID,
+		})
+		assert.ErrorIs(err, ErrTokenExpired)
+		assert.Nil(reply)
+	})
+}
+
 func Test_service_UpdateConfig(t *testing.T) {
 	t.Run("update config successful", func(t *testing.T) {
 		assert := assert.New(t)
@@ -336,10 +520,11 @@ func Test_service_GetConfig(t *testing.T) {
 	})
 }
 
-func newService(repo repository.UserRepository) (Service, error) {
+func newService(repo repository.UserRepository, opts ...utils.Option[serviceOptions]) (Service, error) {
 	return NewService(
 		repo,
 		[]byte("access-token-signing-key"),
 		[]byte("refresh-token-signing-key"),
+		opts...,
 	)
 }
