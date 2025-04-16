@@ -15,30 +15,39 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	controller := gomock.NewController(t)
-	mockService := users.NewMockService(controller)
-
-	// Set up expectations of the mock service.
-	mockService.EXPECT().Login(gomock.Any(), gomock.Any()).Return(&users.LoginReply{
-		AccessToken: &users.Token{
+	var (
+		accessToken = &users.Token{
 			ID: "access-token",
 			Claims: &users.TokenClaims{
 				UserID: "user-id",
 				Nonce:  0,
 			},
 			ExpireAfter: time.Hour,
-		},
-		RefreshToken: &users.Token{
+		}
+		refreshToken = &users.Token{
 			ID: "refresh-token",
 			Claims: &users.TokenClaims{
 				UserID: "user-id",
 				Nonce:  0,
 			},
 			ExpireAfter: time.Hour,
-		},
+		}
+	)
+
+	controller := gomock.NewController(t)
+	mockService := users.NewMockService(controller)
+
+	// Set up expectations of the mock service.
+	mockService.EXPECT().Login(gomock.Any(), gomock.Any()).Return(&users.LoginReply{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}, nil).AnyTimes()
 	mockService.EXPECT().Logout(gomock.Any(), gomock.Any()).Return(&users.LogoutReply{}, nil).AnyTimes()
 	mockService.EXPECT().SignUp(gomock.Any(), gomock.Any()).Return(&users.SignUpReply{}, nil).AnyTimes()
+	mockService.EXPECT().RefreshAccessToken(gomock.Any(), gomock.Any()).Return(&users.RefreshAccessTokenReply{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil).AnyTimes()
 	mockService.EXPECT().ValidateAccessToken(gomock.Any(), gomock.Any()).Return(&users.ValidateAccessTokenReply{}, nil).AnyTimes()
 	mockService.EXPECT().UpdateConfig(gomock.Any(), gomock.Any()).Return(&users.UpdateConfigReply{}, nil).AnyTimes()
 	mockService.EXPECT().GetConfig(gomock.Any(), gomock.Any()).Return(&users.GetConfigReply{}, nil).AnyTimes()
@@ -56,6 +65,9 @@ func TestServer(t *testing.T) {
 	}
 
 	httpExpect.POST("/auth/logout").WithCookie(users.CookieRefreshToken, "refresh-token-id").
+		Expect().Status(httptest.StatusOK)
+
+	httpExpect.POST("/auth/refresh").WithCookie(users.CookieRefreshToken, "refresh-token-id").
 		Expect().Status(httptest.StatusOK)
 
 	httpExpect.POST("/sign-up").WithJSON(models.SignUpRequest{

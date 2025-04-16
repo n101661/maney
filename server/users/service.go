@@ -38,10 +38,11 @@ type Service interface {
 	//  - ErrTokenExpired if the access token is expired
 	ValidateAccessToken(ctx context.Context, r *ValidateAccessTokenRequest) (*ValidateAccessTokenReply, error)
 
-	// ValidateRefreshToken validates if the refresh token is valid or not. It returns:
+	// RefreshAccessToken validates if the refresh token is valid or not. It returns error:
 	//  - ErrInvalidToken if the refresh token is invalid
 	//  - ErrTokenExpired if the refresh token is expired
-	ValidateRefreshToken(ctx context.Context, r *ValidateRefreshTokenRequest) (*ValidateRefreshTokenReply, error)
+	// and returns newer access token.
+	RefreshAccessToken(ctx context.Context, r *RefreshAccessTokenRequest) (*RefreshAccessTokenReply, error)
 
 	// UpdateConfig updates the config, it returns:
 	//  - ErrResourceNotFound if the user is not found
@@ -91,11 +92,14 @@ type ValidateAccessTokenReply struct {
 	UserID string
 }
 
-type ValidateRefreshTokenRequest struct {
+type RefreshAccessTokenRequest struct {
 	TokenID string
 }
 
-type ValidateRefreshTokenReply struct{}
+type RefreshAccessTokenReply struct {
+	AccessToken  *Token
+	RefreshToken *Token
+}
 
 type UpdateConfigRequest struct {
 	UserID string

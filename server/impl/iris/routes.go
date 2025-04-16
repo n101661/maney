@@ -2,7 +2,7 @@ package iris
 
 func (s *Server) registerRoutes() {
 
-	s.app.Post("/auth/refresh")
+	s.app.Post("/auth/refresh", s.userController.RefreshAccessToken)
 	s.app.Post("/login", s.userController.Login)
 	s.app.Post("/auth/logout", s.userController.Logout)
 	s.app.Post("/sign-up", s.userController.SignUp)

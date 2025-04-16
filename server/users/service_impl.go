@@ -160,21 +160,22 @@ func generateRefreshToken(claim *TokenClaims, signingKey []byte) (string, error)
 }
 
 func (s *service) Logout(ctx context.Context, r *LogoutRequest) (*LogoutReply, error) {
-	return &LogoutReply{}, s.revokeRefreshToken(ctx, r.RefreshTokenID)
+	_, err := s.revokeRefreshToken(ctx, r.RefreshTokenID)
+	return &LogoutReply{}, err
 }
 
-func (s *service) revokeRefreshToken(ctx context.Context, tokenID string) error {
+func (s *service) revokeRefreshToken(ctx context.Context, tokenID string) (*repository.TokenModel, error) {
 	token, err := s.repository.DeleteToken(ctx, tokenID)
 	if err != nil {
 		if errors.Is(err, repository.ErrDataNotFound) {
-			return ErrInvalidToken
+			return nil, ErrInvalidToken
 		}
-		return err
+		return nil, err
 	}
 	if time.Now().After(token.ExpiryTime) {
-		return ErrTokenExpired
+		return nil, ErrTokenExpired
 	}
-	return nil
+	return token, nil
 }
 
 func (s *service) SignUp(ctx context.Context, r *SignUpRequest) (*SignUpReply, error) {
@@ -220,19 +221,32 @@ func (s *service) ValidateAccessToken(ctx context.Context, r *ValidateAccessToke
 	}, nil
 }
 
-func (s *service) ValidateRefreshToken(ctx context.Context, r *ValidateRefreshTokenRequest) (*ValidateRefreshTokenReply, error) {
-	token, err := s.repository.GetToken(ctx, r.TokenID)
+func (s *service) RefreshAccessToken(ctx context.Context, r *RefreshAccessTokenRequest) (*RefreshAccessTokenReply, error) {
+	token, err := s.revokeRefreshToken(ctx, r.TokenID)
 	if err != nil {
-		if errors.Is(err, repository.ErrDataNotFound) {
-			return nil, ErrInvalidToken
-		}
 		return nil, err
 	}
 
-	if time.Now().Before(token.ExpiryTime) {
-		return &ValidateRefreshTokenReply{}, nil
+	accessToken, err := s.generateAccessToken(&TokenClaims{
+		UserID: token.Claim.UserID,
+		Nonce:  s.opts.getNonce(),
+	})
+	if err != nil {
+		return nil, err
 	}
-	return nil, ErrTokenExpired
+
+	refreshToken, err := s.generateRefreshToken(ctx, &TokenClaims{
+		UserID: token.Claim.UserID,
+		Nonce:  s.opts.getNonce(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RefreshAccessTokenReply{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
 func (s *service) UpdateConfig(ctx context.Context, r *UpdateConfigRequest) (*UpdateConfigReply, error) {

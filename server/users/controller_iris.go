@@ -69,18 +69,7 @@ func (controller *IrisController) Login(c iris.Context) {
 		return
 	}
 
-	c.SetCookieKV(
-		CookieRefreshToken, reply.RefreshToken.ID,
-		iris.CookiePath(cookiePathRefreshToken),
-		iris.CookieExpires(reply.RefreshToken.ExpireAfter),
-		iris.CookieHTTPOnly(true),
-		iris.CookieSameSite(http.SameSiteStrictMode),
-	)
-
-	c.StatusCode(iris.StatusOK)
-	err = c.JSON(&httpModels.AuthenticationResponse{
-		AccessToken: reply.AccessToken.ID,
-	})
+	err = controller.setAuthenticationResponse(c, reply.RefreshToken, reply.AccessToken)
 	if err != nil && controller.opts.logger != nil {
 		controller.opts.logger.Warnf("failed to response of Login: %v", err)
 	}
@@ -152,6 +141,47 @@ func (controller *IrisController) SignUp(c iris.Context) {
 	}
 
 	c.StatusCode(iris.StatusOK)
+}
+
+func (controller *IrisController) RefreshAccessToken(c iris.Context) {
+	token := c.GetCookie(CookieRefreshToken)
+	token = strings.TrimSpace(token)
+	if token == "" {
+		c.StopWithStatus(iris.StatusUnauthorized)
+		return
+	}
+
+	reply, err := controller.s.RefreshAccessToken(c.Request().Context(), &RefreshAccessTokenRequest{
+		TokenID: token,
+	})
+	if err != nil {
+		if errors.Is(err, ErrInvalidToken) || errors.Is(err, ErrTokenExpired) {
+			c.StopWithStatus(iris.StatusUnauthorized)
+			return
+		}
+		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
+		return
+	}
+
+	err = controller.setAuthenticationResponse(c, reply.RefreshToken, reply.AccessToken)
+	if err != nil && controller.opts.logger != nil {
+		controller.opts.logger.Warnf("failed to response of RefreshAccessToken: %v", err)
+	}
+}
+
+func (controller *IrisController) setAuthenticationResponse(c iris.Context, refreshToken, accessToken *Token) error {
+	c.SetCookieKV(
+		CookieRefreshToken, refreshToken.ID,
+		iris.CookiePath(cookiePathRefreshToken),
+		iris.CookieExpires(refreshToken.ExpireAfter),
+		iris.CookieHTTPOnly(true),
+		iris.CookieSameSite(http.SameSiteStrictMode),
+	)
+
+	c.StatusCode(iris.StatusOK)
+	return c.JSON(&httpModels.AuthenticationResponse{
+		AccessToken: accessToken.ID,
+	})
 }
 
 func (controller *IrisController) ValidateAccessToken(c iris.Context) {

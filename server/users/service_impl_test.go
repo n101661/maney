@@ -314,7 +314,7 @@ func Test_service_ValidateAccessToken(t *testing.T) {
 	})
 }
 
-func Test_service_ValidateRefreshToken(t *testing.T) {
+func Test_service_RefreshAccessToken(t *testing.T) {
 	t.Run("validate successful", func(t *testing.T) {
 		const (
 			tokenID = "my-token"
@@ -326,7 +326,7 @@ func Test_service_ValidateRefreshToken(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().GetToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
+			mockRepo.EXPECT().DeleteToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
 				ID: tokenID,
 				Claim: &repository.TokenClaims{
 					UserID: userID,
@@ -334,6 +334,7 @@ func Test_service_ValidateRefreshToken(t *testing.T) {
 				},
 				ExpiryTime: time.Now().Add(time.Hour),
 			}, nil),
+			mockRepo.EXPECT().CreateToken(gomock.Any(), gomock.Any()).Return(nil),
 		)
 
 		s, err := newService(mockRepo)
@@ -341,11 +342,11 @@ func Test_service_ValidateRefreshToken(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		reply, err := s.ValidateRefreshToken(context.Background(), &ValidateRefreshTokenRequest{
+		reply, err := s.RefreshAccessToken(context.Background(), &RefreshAccessTokenRequest{
 			TokenID: tokenID,
 		})
 		assert.NoError(err)
-		assert.Equal(&ValidateRefreshTokenReply{}, reply)
+		assert.NotNil(reply)
 	})
 	t.Run("invalid token", func(t *testing.T) {
 		assert := assert.New(t)
@@ -353,7 +354,7 @@ func Test_service_ValidateRefreshToken(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().GetToken(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
+			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
 		)
 
 		s, err := newService(mockRepo)
@@ -361,7 +362,7 @@ func Test_service_ValidateRefreshToken(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		reply, err := s.ValidateRefreshToken(context.Background(), &ValidateRefreshTokenRequest{
+		reply, err := s.RefreshAccessToken(context.Background(), &RefreshAccessTokenRequest{
 			TokenID: "invalid-token",
 		})
 		assert.ErrorIs(err, ErrInvalidToken)
@@ -377,7 +378,7 @@ func Test_service_ValidateRefreshToken(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().GetToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
+			mockRepo.EXPECT().DeleteToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
 				ID: tokenID,
 				Claim: &repository.TokenClaims{
 					UserID: "user-id",
@@ -392,7 +393,7 @@ func Test_service_ValidateRefreshToken(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		reply, err := s.ValidateRefreshToken(context.Background(), &ValidateRefreshTokenRequest{
+		reply, err := s.RefreshAccessToken(context.Background(), &RefreshAccessTokenRequest{
 			TokenID: tokenID,
 		})
 		assert.ErrorIs(err, ErrTokenExpired)
