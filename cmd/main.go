@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/n101661/maney/server/impl/iris"
@@ -26,7 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	authStorage, err := users.NewBoltRepository(config.Auth.BoltDBPath)
+	authStorage, err := users.NewBoltRepository(filepath.Join(config.Auth.BoltDBDir, "users.db"))
 	if err != nil {
 		fmt.Printf("failed to initial the storage of the authentication service: %v", err)
 		os.Exit(1)

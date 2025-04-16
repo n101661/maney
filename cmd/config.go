@@ -24,7 +24,7 @@ type AppConfig struct {
 }
 
 type AuthServiceConfig struct {
-	BoltDBPath string `toml:"bolt-db-path" comment:"Path to the BoltDB file."`
+	BoltDBDir string `toml:"bolt-db-dir" comment:"Directory storing the BoltDB file."`
 
 	SaltPasswordRound       int               `toml:"salt-password-round" comment:"Number of rounds to salt the password. If the value is not provided or less than 0, the default is 10."`
 	RefreshTokenSigningKey  string            `toml:"refresh-token-signing-key" comment:"Private key to sign the refresh token."`
@@ -59,7 +59,7 @@ func CreateDefaultConfig(path string) (err error) {
 			},
 		},
 		Auth: &AuthServiceConfig{
-			BoltDBPath:              "auth.db",
+			BoltDBDir:               "./db",
 			SaltPasswordRound:       10,
 			RefreshTokenSigningKey:  "THIS_IS_UNSECURE_SIGNED_KEY",
 			RefreshTokenExpireAfter: encoding.Duration(24 * time.Hour * 30),
