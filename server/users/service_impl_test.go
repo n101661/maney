@@ -8,6 +8,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+
+	"github.com/n101661/maney/server/internal/repository"
 )
 
 func Test_service_Login(t *testing.T) {
@@ -20,9 +22,9 @@ func Test_service_Login(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(&UserModel{
+			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(&repository.UserModel{
 				ID:       userID,
 				Password: lo.Must(encryptPassword(password, defaultOptions().saltPasswordRound)),
 			}, nil),
@@ -45,9 +47,9 @@ func Test_service_Login(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(nil, ErrDataNotFound),
+			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
 		)
 
 		s, err := newService(mockRepo)
@@ -66,9 +68,9 @@ func Test_service_Login(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(&UserModel{
+			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(&repository.UserModel{
 				ID:       "id",
 				Password: lo.Must(encryptPassword("password", defaultOptions().saltPasswordRound)),
 			}, nil),
@@ -97,9 +99,9 @@ func Test_service_Logout(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(&TokenModel{
+			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(&repository.TokenModel{
 				ID: tokenID,
 				Claim: &TokenClaims{
 					UserID: "user-id",
@@ -124,9 +126,9 @@ func Test_service_Logout(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(nil, ErrDataNotFound),
+			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
 		)
 
 		s, err := newService(mockRepo)
@@ -144,9 +146,9 @@ func Test_service_Logout(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(&TokenModel{
+			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(&repository.TokenModel{
 				ID: "token",
 				Claim: &TokenClaims{
 					UserID: "user-id",
@@ -174,7 +176,7 @@ func Test_service_SignUp(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
 			mockRepo.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Return(nil),
 		)
@@ -195,9 +197,9 @@ func Test_service_SignUp(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Return(ErrDataExists),
+			mockRepo.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Return(repository.ErrDataExists),
 		)
 
 		s, err := newService(mockRepo)
@@ -223,9 +225,9 @@ func Test_service_UpdateConfig(t *testing.T) {
 		)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().UpdateUser(gomock.Any(), &UserModel{
+			mockRepo.EXPECT().UpdateUser(gomock.Any(), &repository.UserModel{
 				ID: userID,
 				Config: &UserConfig{
 					CompareItemsInDifferentShop: false,
@@ -253,9 +255,9 @@ func Test_service_UpdateConfig(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Return(ErrDataNotFound),
+			mockRepo.EXPECT().UpdateUser(gomock.Any(), gomock.Any()).Return(repository.ErrDataNotFound),
 		)
 
 		s, err := newService(mockRepo)
@@ -284,9 +286,9 @@ func Test_service_GetConfig(t *testing.T) {
 		)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().GetUser(gomock.Any(), userID).Return(&UserModel{
+			mockRepo.EXPECT().GetUser(gomock.Any(), userID).Return(&repository.UserModel{
 				ID:       userID,
 				Password: []byte("password"),
 				Config: &UserConfig{
@@ -316,9 +318,9 @@ func Test_service_GetConfig(t *testing.T) {
 		assert := assert.New(t)
 
 		controller := gomock.NewController(t)
-		mockRepo := NewMockRepository(controller)
+		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(nil, ErrDataNotFound),
+			mockRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
 		)
 
 		s, err := newService(mockRepo)
@@ -334,7 +336,7 @@ func Test_service_GetConfig(t *testing.T) {
 	})
 }
 
-func newService(repo Repository) (Service, error) {
+func newService(repo repository.UserRepository) (Service, error) {
 	return NewService(
 		repo,
 		[]byte("access-token-signing-key"),

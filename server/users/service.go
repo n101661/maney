@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/n101661/maney/server/internal/repository"
 	"github.com/n101661/maney/server/models"
 )
 
@@ -61,10 +62,7 @@ type LoginReply struct {
 	RefreshToken *Token
 }
 
-type TokenClaims struct {
-	UserID string
-	Nonce  int
-}
+type TokenClaims = repository.TokenClaims
 
 type Token struct {
 	ID          string

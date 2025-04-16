@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/n101661/maney/server/internal/repository"
 )
 
 func Test_boltRepository(t *testing.T) {
@@ -27,23 +29,23 @@ func Test_boltRepository(t *testing.T) {
 	)
 
 	t.Run("create the user successful", func(t *testing.T) {
-		assert.NoError(t, s.CreateUser(context.Background(), &UserModel{
+		assert.NoError(t, s.CreateUser(context.Background(), &repository.UserModel{
 			ID:       userID,
 			Password: []byte(password),
 			Config:   &UserConfig{},
 		}))
 	})
 	t.Run("create existing user failed", func(t *testing.T) {
-		assert.ErrorIs(t, s.CreateUser(context.Background(), &UserModel{
+		assert.ErrorIs(t, s.CreateUser(context.Background(), &repository.UserModel{
 			ID:       userID,
 			Password: []byte("password-2"),
 			Config:   &UserConfig{},
-		}), ErrDataExists)
+		}), repository.ErrDataExists)
 	})
 	t.Run("get the user successful", func(t *testing.T) {
 		user, err := s.GetUser(context.Background(), userID)
 		assert.NoError(t, err)
-		assert.Equal(t, &UserModel{
+		assert.Equal(t, &repository.UserModel{
 			ID:       userID,
 			Password: []byte(password),
 			Config:   &UserConfig{},
@@ -52,12 +54,12 @@ func Test_boltRepository(t *testing.T) {
 	t.Run("get non-existing user failed", func(t *testing.T) {
 		user, err := s.GetUser(context.Background(), "not found"+userID)
 		assert.Nil(t, user)
-		assert.ErrorIs(t, err, ErrDataNotFound)
+		assert.ErrorIs(t, err, repository.ErrDataNotFound)
 	})
 	t.Run("update the user successful", func(t *testing.T) {
 		const newPassword = "new" + password
 
-		err := s.UpdateUser(context.Background(), &UserModel{
+		err := s.UpdateUser(context.Background(), &repository.UserModel{
 			ID:       userID,
 			Password: []byte(newPassword),
 			Config: &UserConfig{
@@ -69,7 +71,7 @@ func Test_boltRepository(t *testing.T) {
 
 		updatedUser, err := s.GetUser(context.Background(), userID)
 		assert.NoError(t, err)
-		assert.Equal(t, &UserModel{
+		assert.Equal(t, &repository.UserModel{
 			ID:       userID,
 			Password: []byte(newPassword),
 			Config: &UserConfig{
@@ -79,17 +81,17 @@ func Test_boltRepository(t *testing.T) {
 		}, updatedUser)
 	})
 	t.Run("update non-existing user", func(t *testing.T) {
-		err := s.UpdateUser(context.Background(), &UserModel{
+		err := s.UpdateUser(context.Background(), &repository.UserModel{
 			ID:       "not found" + userID,
 			Password: []byte(password),
 			Config:   &UserConfig{},
 		})
-		assert.ErrorIs(t, err, ErrDataNotFound)
+		assert.ErrorIs(t, err, repository.ErrDataNotFound)
 	})
 	t.Run("create the token successful", func(t *testing.T) {
-		assert.NoError(t, s.CreateToken(context.Background(), &TokenModel{
+		assert.NoError(t, s.CreateToken(context.Background(), &repository.TokenModel{
 			ID: "token",
-			Claim: &TokenClaims{
+			Claim: &repository.TokenClaims{
 				UserID: "tester",
 				Nonce:  0,
 			},
@@ -97,14 +99,14 @@ func Test_boltRepository(t *testing.T) {
 		}))
 	})
 	t.Run("create existing token failed", func(t *testing.T) {
-		assert.ErrorIs(t, s.CreateToken(context.Background(), &TokenModel{
+		assert.ErrorIs(t, s.CreateToken(context.Background(), &repository.TokenModel{
 			ID: "token",
-			Claim: &TokenClaims{
+			Claim: &repository.TokenClaims{
 				UserID: "tester-2",
 				Nonce:  0,
 			},
 			ExpiryTime: time.Now(),
-		}), ErrDataExists)
+		}), repository.ErrDataExists)
 	})
 	t.Run("get the token successful", func(t *testing.T) {
 		token, err := s.GetToken(context.Background(), "token")
@@ -112,9 +114,9 @@ func Test_boltRepository(t *testing.T) {
 
 		// Ignore the expiry time because it depends on the unmarshaling function.
 		token.ExpiryTime = time.Time{}
-		assert.Equal(t, &TokenModel{
+		assert.Equal(t, &repository.TokenModel{
 			ID: "token",
-			Claim: &TokenClaims{
+			Claim: &repository.TokenClaims{
 				UserID: "tester",
 				Nonce:  0,
 			},
@@ -123,7 +125,7 @@ func Test_boltRepository(t *testing.T) {
 	t.Run("get non-existing token failed", func(t *testing.T) {
 		token, err := s.GetToken(context.Background(), "token-2")
 		assert.Nil(t, token)
-		assert.ErrorIs(t, err, ErrDataNotFound)
+		assert.ErrorIs(t, err, repository.ErrDataNotFound)
 	})
 	t.Run("delete the token successful", func(t *testing.T) {
 		token, err := s.DeleteToken(context.Background(), "token")
@@ -131,9 +133,9 @@ func Test_boltRepository(t *testing.T) {
 
 		// Ignore the expiry time because it depends on the unmarshaling function.
 		token.ExpiryTime = time.Time{}
-		assert.Equal(t, &TokenModel{
+		assert.Equal(t, &repository.TokenModel{
 			ID: "token",
-			Claim: &TokenClaims{
+			Claim: &repository.TokenClaims{
 				UserID: "tester",
 				Nonce:  0,
 			},
@@ -141,7 +143,7 @@ func Test_boltRepository(t *testing.T) {
 	})
 	t.Run("delete non-existing token successful", func(t *testing.T) {
 		token, err := s.DeleteToken(context.Background(), "token-2")
-		assert.ErrorIs(t, err, ErrDataNotFound)
+		assert.ErrorIs(t, err, repository.ErrDataNotFound)
 		assert.Nil(t, token)
 	})
 }

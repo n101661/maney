@@ -2,11 +2,13 @@ package users
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
+	"go.etcd.io/bbolt"
+
 	"github.com/n101661/maney/pkg/utils"
-	bolt "go.etcd.io/bbolt"
+	"github.com/n101661/maney/server/internal/repository"
+	"github.com/n101661/maney/server/internal/repository/bolt"
 )
 
 const (
@@ -15,20 +17,20 @@ const (
 )
 
 type boltRepository struct {
-	db *bolt.DB
+	db *bbolt.DB
 
-	opts *boltOptions
+	opts *bolt.Options
 }
 
-func NewBoltRepository(path string, opts ...utils.Option[boltOptions]) (Repository, error) {
-	db, err := bolt.Open(path, 0600, nil)
+func NewBoltRepository(path string, opts ...utils.Option[bolt.Options]) (repository.UserRepository, error) {
+	db, err := bbolt.Open(path, 0600, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open bolt db: %w", err)
 	}
 
 	s := &boltRepository{
 		db:   db,
-		opts: utils.ApplyOptions(defaultBoltOptions(), opts),
+		opts: utils.ApplyOptions(bolt.DefaultOptions(), opts),
 	}
 
 	if err := s.init(); err != nil {
@@ -39,7 +41,7 @@ func NewBoltRepository(path string, opts ...utils.Option[boltOptions]) (Reposito
 }
 
 func (s *boltRepository) init() error {
-	return s.db.Update(func(tx *bolt.Tx) error {
+	return s.db.Update(func(tx *bbolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(userBucket)); err != nil {
 			return fmt.Errorf("failed to create user bucket: %w", err)
 		}
@@ -52,20 +54,20 @@ func (s *boltRepository) init() error {
 	})
 }
 
-func (s *boltRepository) CreateUser(_ context.Context, user *UserModel) error {
-	return create(s.db, userBucket, user.ID, user, s.opts)
+func (s *boltRepository) CreateUser(_ context.Context, user *repository.UserModel) error {
+	return bolt.Create(s.db, userBucket, user.ID, user, s.opts)
 }
 
-func (s *boltRepository) GetUser(_ context.Context, userID string) (*UserModel, error) {
-	return get[UserModel](s.db, userBucket, userID, s.opts)
+func (s *boltRepository) GetUser(_ context.Context, userID string) (*repository.UserModel, error) {
+	return bolt.Get[repository.UserModel](s.db, userBucket, userID, s.opts)
 }
 
-func (s *boltRepository) UpdateUser(_ context.Context, user *UserModel) error {
+func (s *boltRepository) UpdateUser(_ context.Context, user *repository.UserModel) error {
 	if user.Password == nil && user.Config == nil {
 		return fmt.Errorf("no fields to update")
 	}
 
-	return s.db.Update(func(tx *bolt.Tx) error {
+	return s.db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte(userBucket))
 		if bucket == nil {
 			return fmt.Errorf("bucket %s not found", userBucket)
@@ -73,11 +75,11 @@ func (s *boltRepository) UpdateUser(_ context.Context, user *UserModel) error {
 
 		data := bucket.Get([]byte(user.ID))
 		if data == nil {
-			return ErrDataNotFound
+			return repository.ErrDataNotFound
 		}
 
-		var current UserModel
-		if err := s.opts.unmarshalValue(data, &current); err != nil {
+		var current repository.UserModel
+		if err := s.opts.UnmarshalValue(data, &current); err != nil {
 			return fmt.Errorf("failed to unmarshal existing user: %w", err)
 		}
 
@@ -88,7 +90,7 @@ func (s *boltRepository) UpdateUser(_ context.Context, user *UserModel) error {
 			current.Config = user.Config
 		}
 
-		data, err := s.opts.marshalValue(&current)
+		data, err := s.opts.MarshalValue(&current)
 		if err != nil {
 			return fmt.Errorf("failed to marshal updated user: %w", err)
 		}
@@ -97,108 +99,18 @@ func (s *boltRepository) UpdateUser(_ context.Context, user *UserModel) error {
 	})
 }
 
-func (s *boltRepository) CreateToken(_ context.Context, token *TokenModel) error {
-	return create(s.db, tokenBucket, token.ID, token, s.opts)
+func (s *boltRepository) CreateToken(_ context.Context, token *repository.TokenModel) error {
+	return bolt.Create(s.db, tokenBucket, token.ID, token, s.opts)
 }
 
-func (s *boltRepository) GetToken(_ context.Context, tokenID string) (*TokenModel, error) {
-	return get[TokenModel](s.db, tokenBucket, tokenID, s.opts)
+func (s *boltRepository) GetToken(_ context.Context, tokenID string) (*repository.TokenModel, error) {
+	return bolt.Get[repository.TokenModel](s.db, tokenBucket, tokenID, s.opts)
 }
 
-func (s *boltRepository) DeleteToken(_ context.Context, tokenID string) (*TokenModel, error) {
-	return delete[TokenModel](s.db, tokenBucket, tokenID, s.opts)
+func (s *boltRepository) DeleteToken(_ context.Context, tokenID string) (*repository.TokenModel, error) {
+	return bolt.Delete[repository.TokenModel](s.db, tokenBucket, tokenID, s.opts)
 }
 
 func (s *boltRepository) Close() error {
 	return s.db.Close()
-}
-
-func create(db *bolt.DB, bucketID, key string, value any, opts *boltOptions) error {
-	return db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucketID))
-		if bucket == nil {
-			return fmt.Errorf("bucket %s not found", bucketID)
-		}
-
-		if bucket.Get([]byte(key)) != nil {
-			return ErrDataExists
-		}
-
-		data, err := opts.marshalValue(value)
-		if err != nil {
-			return fmt.Errorf("failed to marshal value: %w", err)
-		}
-
-		return bucket.Put([]byte(key), data)
-	})
-}
-
-func get[T any](db *bolt.DB, bucketID, key string, opts *boltOptions) (*T, error) {
-	var value T
-	err := db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucketID))
-		if bucket == nil {
-			return fmt.Errorf("bucket %s not found", bucketID)
-		}
-
-		data := bucket.Get([]byte(key))
-		if data == nil {
-			return ErrDataNotFound
-		}
-
-		return opts.unmarshalValue(data, &value)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &value, nil
-}
-
-func delete[T any](db *bolt.DB, bucketID, key string, opts *boltOptions) (*T, error) {
-	var value T
-	err := db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucketID))
-		if bucket == nil {
-			return fmt.Errorf("bucket %s not found", bucketID)
-		}
-
-		data := bucket.Get([]byte(key))
-		if data == nil {
-			return ErrDataNotFound
-		}
-
-		if err := opts.unmarshalValue(data, &value); err != nil {
-			return fmt.Errorf("failed to unmarshal value: %w", err)
-		}
-
-		return bucket.Delete([]byte(key))
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &value, nil
-}
-
-type boltOptions struct {
-	marshalValue   func(interface{}) ([]byte, error)
-	unmarshalValue func([]byte, interface{}) error
-}
-
-func defaultBoltOptions() *boltOptions {
-	return &boltOptions{
-		marshalValue:   json.Marshal,
-		unmarshalValue: json.Unmarshal,
-	}
-}
-
-func WithMarshaller(marshaler func(interface{}) ([]byte, error)) func(*boltOptions) {
-	return func(o *boltOptions) {
-		o.marshalValue = marshaler
-	}
-}
-
-func WithUnmarshaler(unmarshaler func([]byte, interface{}) error) func(*boltOptions) {
-	return func(o *boltOptions) {
-		o.unmarshalValue = unmarshaler
-	}
 }

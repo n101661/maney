@@ -1,19 +1,14 @@
-package users
+package repository
 
 import (
 	"context"
-	"errors"
 	"io"
 	"time"
+
+	"github.com/n101661/maney/server/models"
 )
 
-// Repository errors.
-var (
-	ErrDataExists   = errors.New("the data exists")
-	ErrDataNotFound = errors.New("the data is not found")
-)
-
-type Repository interface {
+type UserRepository interface {
 	// Create creates the given user. It returns ErrDataExists if the user already exists.
 	CreateUser(ctx context.Context, user *UserModel) error
 	// GetUser returns the specified user. It returns ErrDataNotFound if the user does not exist.
@@ -38,8 +33,15 @@ type UserModel struct {
 	Config   *UserConfig
 }
 
+type UserConfig = models.UserConfig
+
 type TokenModel struct {
 	ID         string
 	Claim      *TokenClaims
 	ExpiryTime time.Time
+}
+
+type TokenClaims struct {
+	UserID string
+	Nonce  int
 }

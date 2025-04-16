@@ -14,10 +14,12 @@ import (
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/n101661/maney/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/n101661/maney/server/internal/repository"
 )
 
 type service struct {
-	repository             Repository
+	repository             repository.UserRepository
 	accessTokenSigningKey  []byte
 	refreshTokenSigningKey []byte
 
@@ -25,7 +27,7 @@ type service struct {
 }
 
 func NewService(
-	storage Repository,
+	storage repository.UserRepository,
 	accessTokenSigningKey []byte,
 	refreshTokenSigningKey []byte,
 	opts ...utils.Option[serviceOptions],
@@ -76,7 +78,7 @@ func (s *service) Login(ctx context.Context, r *LoginRequest) (*LoginReply, erro
 func (s *service) validateUser(ctx context.Context, id, password string) error {
 	user, err := s.repository.GetUser(ctx, id)
 	if err != nil {
-		if errors.Is(err, ErrDataNotFound) {
+		if errors.Is(err, repository.ErrDataNotFound) {
 			return ErrUserNotFoundOrInvalidPassword
 		}
 		return err
@@ -123,7 +125,7 @@ func (s *service) generateRefreshToken(ctx context.Context, claim *TokenClaims) 
 		return nil, err
 	}
 
-	err = s.repository.CreateToken(ctx, &TokenModel{
+	err = s.repository.CreateToken(ctx, &repository.TokenModel{
 		ID:         tokenID,
 		Claim:      claim,
 		ExpiryTime: time.Now().Add(s.opts.refreshTokenExpireAfter),
@@ -164,7 +166,7 @@ func (s *service) Logout(ctx context.Context, r *LogoutRequest) (*LogoutReply, e
 func (s *service) revokeRefreshToken(ctx context.Context, tokenID string) error {
 	token, err := s.repository.DeleteToken(ctx, tokenID)
 	if err != nil {
-		if errors.Is(err, ErrDataNotFound) {
+		if errors.Is(err, repository.ErrDataNotFound) {
 			return ErrInvalidToken
 		}
 		return err
@@ -181,13 +183,13 @@ func (s *service) SignUp(ctx context.Context, r *SignUpRequest) (*SignUpReply, e
 		return nil, err
 	}
 
-	err = s.repository.CreateUser(ctx, &UserModel{
+	err = s.repository.CreateUser(ctx, &repository.UserModel{
 		ID:       r.UserID,
 		Password: encryptedPassword,
 		Config:   &UserConfig{},
 	})
 	if err != nil {
-		if errors.Is(err, ErrDataExists) {
+		if errors.Is(err, repository.ErrDataExists) {
 			return nil, ErrUserExists
 		}
 		return nil, err
@@ -221,7 +223,7 @@ func (s *service) ValidateAccessToken(ctx context.Context, r *ValidateAccessToke
 func (s *service) ValidateRefreshToken(ctx context.Context, r *ValidateRefreshTokenRequest) (*ValidateRefreshTokenReply, error) {
 	token, err := s.repository.GetToken(ctx, r.TokenID)
 	if err != nil {
-		if errors.Is(err, ErrDataNotFound) {
+		if errors.Is(err, repository.ErrDataNotFound) {
 			return nil, ErrInvalidToken
 		}
 		return nil, err
@@ -234,12 +236,12 @@ func (s *service) ValidateRefreshToken(ctx context.Context, r *ValidateRefreshTo
 }
 
 func (s *service) UpdateConfig(ctx context.Context, r *UpdateConfigRequest) (*UpdateConfigReply, error) {
-	err := s.repository.UpdateUser(ctx, &UserModel{
+	err := s.repository.UpdateUser(ctx, &repository.UserModel{
 		ID:     r.UserID,
 		Config: r.Config,
 	})
 	if err != nil {
-		if errors.Is(err, ErrDataNotFound) {
+		if errors.Is(err, repository.ErrDataNotFound) {
 			return nil, ErrResourceNotFound
 		}
 		return nil, err
@@ -250,7 +252,7 @@ func (s *service) UpdateConfig(ctx context.Context, r *UpdateConfigRequest) (*Up
 func (s *service) GetConfig(ctx context.Context, r *GetConfigRequest) (*GetConfigReply, error) {
 	user, err := s.repository.GetUser(ctx, r.UserID)
 	if err != nil {
-		if errors.Is(err, ErrDataNotFound) {
+		if errors.Is(err, repository.ErrDataNotFound) {
 			return nil, ErrResourceNotFound
 		}
 		return nil, err
