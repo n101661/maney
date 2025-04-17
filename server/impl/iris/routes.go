@@ -2,22 +2,22 @@ package iris
 
 func (s *Server) registerRoutes() {
 
-	s.app.Post("/auth/refresh", s.userController.RefreshAccessToken)
-	s.app.Post("/login", s.userController.Login)
-	s.app.Post("/auth/logout", s.userController.Logout)
-	s.app.Post("/sign-up", s.userController.SignUp)
+	s.app.Post("/auth/refresh", s.controllers.User.RefreshAccessToken)
+	s.app.Post("/login", s.controllers.User.Login)
+	s.app.Post("/auth/logout", s.controllers.User.Logout)
+	s.app.Post("/sign-up", s.controllers.User.SignUp)
 
-	user := s.app.Party("/", s.userController.ValidateAccessToken)
+	user := s.app.Party("/", s.controllers.User.ValidateAccessToken)
 
 	{ // user's config
-		user.Put("/config", s.userController.UpdateUserConfig)
-		user.Get("/config", s.userController.GetUserConfig)
+		user.Put("/config", s.controllers.User.UpdateUserConfig)
+		user.Get("/config", s.controllers.User.GetUserConfig)
 	}
 	{ // user's accounts
-		user.Post("/accounts", s.CreateAccount)
-		user.Get("/accounts", s.ListAccounts)
-		user.Put("/accounts/{accountId}", s.UpdateAccount)
-		user.Delete("/accounts/{accountId}", s.DeleteAccount)
+		user.Post("/accounts", s.controllers.Account.Create)
+		user.Get("/accounts", s.controllers.Account.List)
+		user.Put("/accounts/{accountId}", s.controllers.Account.Update)
+		user.Delete("/accounts/{accountId}", s.controllers.Account.Delete)
 	}
 	{ // user's categories
 		user.Post("/categories")

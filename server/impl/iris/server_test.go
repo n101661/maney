@@ -8,8 +8,10 @@ import (
 
 	"github.com/iris-contrib/httpexpect/v2"
 	"github.com/kataras/iris/v12/httptest"
+	"github.com/shopspring/decimal"
 	"go.uber.org/mock/gomock"
 
+	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/models"
 	"github.com/n101661/maney/server/users"
 )
@@ -35,24 +37,62 @@ func TestServer(t *testing.T) {
 	)
 
 	controller := gomock.NewController(t)
-	mockService := users.NewMockService(controller)
+	userService := users.NewMockService(controller)
+	accountService := accounts.NewMockService(controller)
 
 	// Set up expectations of the mock service.
-	mockService.EXPECT().Login(gomock.Any(), gomock.Any()).Return(&users.LoginReply{
+	userService.EXPECT().Login(gomock.Any(), gomock.Any()).Return(&users.LoginReply{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil).AnyTimes()
-	mockService.EXPECT().Logout(gomock.Any(), gomock.Any()).Return(&users.LogoutReply{}, nil).AnyTimes()
-	mockService.EXPECT().SignUp(gomock.Any(), gomock.Any()).Return(&users.SignUpReply{}, nil).AnyTimes()
-	mockService.EXPECT().RefreshAccessToken(gomock.Any(), gomock.Any()).Return(&users.RefreshAccessTokenReply{
+	userService.EXPECT().Logout(gomock.Any(), gomock.Any()).Return(&users.LogoutReply{}, nil).AnyTimes()
+	userService.EXPECT().SignUp(gomock.Any(), gomock.Any()).Return(&users.SignUpReply{}, nil).AnyTimes()
+	userService.EXPECT().RefreshAccessToken(gomock.Any(), gomock.Any()).Return(&users.RefreshAccessTokenReply{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil).AnyTimes()
-	mockService.EXPECT().ValidateAccessToken(gomock.Any(), gomock.Any()).Return(&users.ValidateAccessTokenReply{}, nil).AnyTimes()
-	mockService.EXPECT().UpdateConfig(gomock.Any(), gomock.Any()).Return(&users.UpdateConfigReply{}, nil).AnyTimes()
-	mockService.EXPECT().GetConfig(gomock.Any(), gomock.Any()).Return(&users.GetConfigReply{}, nil).AnyTimes()
+	userService.EXPECT().ValidateAccessToken(gomock.Any(), gomock.Any()).Return(&users.ValidateAccessTokenReply{}, nil).AnyTimes()
+	userService.EXPECT().UpdateConfig(gomock.Any(), gomock.Any()).Return(&users.UpdateConfigReply{}, nil).AnyTimes()
+	userService.EXPECT().GetConfig(gomock.Any(), gomock.Any()).Return(&users.GetConfigReply{}, nil).AnyTimes()
 
-	httpExpect := httptest.New(t, NewServer(&Config{}, users.NewIrisController(mockService)).app)
+	accountService.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&accounts.CreateReply{
+		Account: &accounts.Account{
+			ID: 0,
+			BaseAccount: &accounts.BaseAccount{
+				Name:           "A",
+				IconID:         0,
+				InitialBalance: decimal.Zero,
+			},
+			Balance: decimal.Zero,
+		},
+	}, nil).AnyTimes()
+	accountService.EXPECT().List(gomock.Any(), gomock.Any()).Return(&accounts.ListReply{
+		Accounts: []*accounts.Account{{
+			ID: 0,
+			BaseAccount: &accounts.BaseAccount{
+				Name:           "A",
+				IconID:         0,
+				InitialBalance: decimal.Zero,
+			},
+			Balance: decimal.Zero,
+		}},
+	}, nil).AnyTimes()
+	accountService.EXPECT().Update(gomock.Any(), gomock.Any()).Return(&accounts.UpdateReply{
+		Account: &accounts.Account{
+			ID: 0,
+			BaseAccount: &accounts.BaseAccount{
+				Name:           "A",
+				IconID:         0,
+				InitialBalance: decimal.Zero,
+			},
+			Balance: decimal.Zero,
+		},
+	}, nil).AnyTimes()
+	accountService.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(&accounts.DeleteReply{}, nil).AnyTimes()
+
+	httpExpect := httptest.New(t, NewServer(&Config{}, &Controllers{
+		User: users.NewIrisController(userService),
+	}).app)
 
 	loginResponse := httpExpect.POST("/login").WithJSON(models.LoginRequest{
 		Id:       "user-id",
@@ -81,6 +121,24 @@ func TestServer(t *testing.T) {
 	}).Expect().Status(httptest.StatusOK)
 
 	withAuthorization(httpExpect.GET("/config")).
+		Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.POST("/accounts")).WithJSON(models.BasicAccount{
+		Name:           "A",
+		IconId:         0,
+		InitialBalance: "0",
+	}).Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.GET("/accounts")).
+		Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.PUT("/accounts/1")).WithJSON(models.BasicAccount{
+		Name:           "A",
+		IconId:         0,
+		InitialBalance: "0",
+	}).Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.DELETE("/accounts/1")).
 		Expect().Status(httptest.StatusOK)
 }
 

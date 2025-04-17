@@ -9,6 +9,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/requestid"
 
 	"github.com/n101661/maney/database"
+	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/impl/iris/auth"
 	"github.com/n101661/maney/server/impl/iris/config"
 	"github.com/n101661/maney/server/middleware/errors"
@@ -26,24 +27,29 @@ type Config struct {
 	PasswordSaltRound int    `toml:"-"`
 }
 
+type Controllers struct {
+	User    *users.IrisController
+	Account *accounts.IrisController
+}
+
 type Server struct {
 	app  *iris.Application
 	auth *auth.Authentication
 
-	userController *users.IrisController
+	controllers *Controllers
 
 	db database.DB
 }
 
-func NewServer(cfg *Config, userController *users.IrisController) *Server {
+func NewServer(cfg *Config, controllers *Controllers) *Server {
 	s := &Server{
 		app: newIrisApplication(cfg),
 		auth: auth.NewAuthentication(
 			cfg.SecretKey,
 			auth.WithPasswordSaltRound(cfg.PasswordSaltRound),
 		),
-		userController: userController,
-		db:             nil, // TODO
+		controllers: controllers,
+		db:          nil, // TODO
 	}
 
 	s.registerRoutes()

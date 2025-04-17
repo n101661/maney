@@ -429,8 +429,7 @@ components:
         - compareItemsInDifferentShop
         - compareItemsInSameShop
     Id:
-      type: string
-      format: uint64
+      type: integer
       example: 0
     ObjectId:
       type: object
@@ -449,6 +448,8 @@ components:
           $ref: "#/components/schemas/Decimal"
       required:
         - name
+        - iconId
+        - initialBalance
     Account:
       allOf:
         - $ref: "#/components/schemas/ObjectId"
@@ -457,6 +458,10 @@ components:
           properties:
             balance:
               $ref: "#/components/schemas/Decimal"
+      required:
+        - id
+        - name
+        - balance
     CategoryType:
       type: string
       enum: ["expense", "income"]

@@ -2,27 +2,42 @@ package accounts
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/shopspring/decimal"
+)
+
+var (
+	ErrAccountNotFound = fmt.Errorf("account not found")
 )
 
 type Service interface {
 	Create(context.Context, *CreateRequest) (*CreateReply, error)
 	List(context.Context, *ListRequest) (*ListReply, error)
+	// Update returns error:
+	//  - ErrAccountNotFound if the account does not exist.
 	Update(context.Context, *UpdateRequest) (*UpdateReply, error)
+	// Delete returns error:
+	//  - ErrAccountNotFound if the account does not exist.
 	Delete(context.Context, *DeleteRequest) (*DeleteReply, error)
 }
 
-type Account struct {
-	ID             int64
+type BaseAccount struct {
 	Name           string
-	IconID         int64
+	IconID         int32
 	InitialBalance decimal.Decimal
+}
+
+type Account struct {
+	ID int32
+	*BaseAccount
+	// Balance is the current balance.
+	Balance decimal.Decimal
 }
 
 type CreateRequest struct {
 	UserID  string
-	Account *Account
+	Account *BaseAccount
 }
 
 type CreateReply struct {
@@ -38,15 +53,18 @@ type ListReply struct {
 }
 
 type UpdateRequest struct {
-	UserID  string
+	UserID    string
+	AccountID int32
+	Account   *BaseAccount
+}
+
+type UpdateReply struct {
 	Account *Account
 }
 
-type UpdateReply struct{}
-
 type DeleteRequest struct {
 	UserID    string
-	AccountID int64
+	AccountID int32
 }
 
 type DeleteReply struct{}

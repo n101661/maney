@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/impl/iris"
 	"github.com/n101661/maney/server/users"
 )
@@ -48,7 +49,24 @@ func main() {
 	}
 	userController := users.NewIrisController(userService)
 
-	s := iris.NewServer(config.App.Config, userController)
+	accountRepo, err := accounts.NewBoltRepository(filepath.Join(config.Auth.BoltDBDir, "accounts.db"))
+	if err != nil {
+		fmt.Printf("failed to initial account repository: %v", err)
+		os.Exit(1)
+	}
+	defer userRepo.Close()
+
+	accountService, err := accounts.NewService(accountRepo)
+	if err != nil {
+		fmt.Printf("failed to initial the account service: %v", err)
+		os.Exit(1)
+	}
+	accountController := accounts.NewIrisController(accountService)
+
+	s := iris.NewServer(config.App.Config, &iris.Controllers{
+		User:    userController,
+		Account: accountController,
+	})
 	if err := s.ListenAndServe(fmt.Sprintf("%s:%d", config.App.Host, config.App.Port)); err != nil {
 		fmt.Printf("failed to listen and serve: %v", err)
 		os.Exit(1)
