@@ -54,7 +54,7 @@ func main() {
 		fmt.Printf("failed to initial account repository: %v", err)
 		os.Exit(1)
 	}
-	defer userRepo.Close()
+	defer accountRepo.Close()
 
 	accountService, err := accounts.NewService(accountRepo)
 	if err != nil {

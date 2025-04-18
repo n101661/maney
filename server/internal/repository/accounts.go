@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"io"
 
 	"github.com/shopspring/decimal"
 )
@@ -20,6 +21,8 @@ type AccountRepository interface {
 	// Delete returns error:
 	//  - ErrDataNotFound if the account does not exist.
 	Delete(context.Context, *DeleteAccountsRequest) ([]*Account, error)
+
+	io.Closer
 }
 
 type CreateAccountsRequest struct {

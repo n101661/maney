@@ -233,6 +233,10 @@ func (repo *boltRepository) Delete(ctx context.Context, r *repository.DeleteAcco
 	return rows, nil
 }
 
+func (repo *boltRepository) Close() error {
+	return repo.db.Close()
+}
+
 type boltAccountModel struct {
 	*repository.BaseAccount
 	Balance decimal.Decimal
