@@ -8,10 +8,8 @@ import (
 	"github.com/kataras/iris/v12/middleware/cors"
 	"github.com/kataras/iris/v12/middleware/requestid"
 
-	"github.com/n101661/maney/database"
 	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/categories"
-	"github.com/n101661/maney/server/impl/iris/auth"
 	"github.com/n101661/maney/server/impl/iris/config"
 	"github.com/n101661/maney/server/middleware/errors"
 	"github.com/n101661/maney/server/middleware/logger"
@@ -35,23 +33,15 @@ type Controllers struct {
 }
 
 type Server struct {
-	app  *iris.Application
-	auth *auth.Authentication
+	app *iris.Application
 
 	controllers *Controllers
-
-	db database.DB
 }
 
 func NewServer(cfg *Config, controllers *Controllers) *Server {
 	s := &Server{
-		app: newIrisApplication(cfg),
-		auth: auth.NewAuthentication(
-			cfg.SecretKey,
-			auth.WithPasswordSaltRound(cfg.PasswordSaltRound),
-		),
+		app:         newIrisApplication(cfg),
 		controllers: controllers,
-		db:          nil, // TODO
 	}
 
 	s.registerRoutes()
