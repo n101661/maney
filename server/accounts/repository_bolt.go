@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"go.etcd.io/bbolt"
-	"golang.org/x/exp/constraints"
-
-	"github.com/n101661/maney/pkg/utils"
-	"github.com/n101661/maney/server/repository"
-	"github.com/n101661/maney/server/repository/bolt"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"go.etcd.io/bbolt"
+
+	"github.com/n101661/maney/pkg/utils"
+	"github.com/n101661/maney/pkg/utils/types"
+	"github.com/n101661/maney/server/repository"
+	"github.com/n101661/maney/server/repository/bolt"
 )
 
 const (
@@ -60,18 +60,18 @@ func (s *boltRepository) init() error {
 func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateAccountsRequest) ([]*repository.Account, error) {
 	rows := make([]*repository.Account, len(r.Accounts))
 	err := repo.db.Update(func(tx *bbolt.Tx) error {
-		bucket, err := getUserBucket(tx, r.UserID)
+		bucket, err := bolt.GetUserBucketOrCreate(tx, accountBucket, r.UserID)
 		if err != nil {
 			return err
 		}
 
 		for i, account := range r.Accounts {
-			id, err := nextSequenceAs[int32](bucket)
+			id, err := bolt.NextSequence[int32](bucket)
 			if err != nil {
 				return err
 			}
 
-			bid := int32ToBytes(id)
+			bid := types.Int32ToBytes(id)
 
 			if bucket.Get(bid) != nil {
 				return repository.ErrDataExists
@@ -107,13 +107,13 @@ func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateAcco
 func (repo *boltRepository) List(ctx context.Context, r *repository.ListAccountsRequest) (*repository.ListAccountsReply, error) {
 	rows := []*repository.Account{}
 	err := repo.db.View(func(tx *bbolt.Tx) error {
-		bucket, err := getUserBucket(tx, r.UserID)
+		bucket, err := bolt.GetUserBucketOrCreate(tx, accountBucket, r.UserID)
 		if err != nil {
 			return err
 		}
 
 		return bucket.ForEach(func(k, v []byte) error {
-			id, err := bytesToInt32(k)
+			id, err := types.BytesToInt32(k)
 			if err != nil {
 				return fmt.Errorf("invalid id of account: %w", err)
 			}
@@ -146,12 +146,12 @@ func (repo *boltRepository) List(ctx context.Context, r *repository.ListAccounts
 func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateAccountRequest) (*repository.Account, error) {
 	var res *repository.Account
 	err := repo.db.Update(func(tx *bbolt.Tx) error {
-		bucket, err := getUserBucket(tx, r.UserID)
+		bucket, err := bolt.GetUserBucketOrCreate(tx, accountBucket, r.UserID)
 		if err != nil {
 			return err
 		}
 
-		bid := int32ToBytes(r.AccountID)
+		bid := types.Int32ToBytes(r.AccountID)
 
 		data := bucket.Get(bid)
 		if data == nil {
@@ -196,13 +196,13 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateAcco
 func (repo *boltRepository) Delete(ctx context.Context, r *repository.DeleteAccountsRequest) ([]*repository.Account, error) {
 	rows := make([]*repository.Account, len(r.AccountIDs))
 	err := repo.db.Update(func(tx *bbolt.Tx) error {
-		bucket, err := getUserBucket(tx, r.UserID)
+		bucket, err := bolt.GetUserBucketOrCreate(tx, accountBucket, r.UserID)
 		if err != nil {
 			return err
 		}
 
 		for i, accountID := range r.AccountIDs {
-			bid := int32ToBytes(accountID)
+			bid := types.Int32ToBytes(accountID)
 
 			data := bucket.Get(bid)
 			if data == nil {
@@ -240,51 +240,4 @@ func (repo *boltRepository) Close() error {
 type boltAccountModel struct {
 	*repository.BaseAccount
 	Balance decimal.Decimal
-}
-
-func getUserBucket(tx *bbolt.Tx, userID string) (*bbolt.Bucket, error) {
-	bucket := tx.Bucket([]byte(accountBucket))
-	if bucket == nil {
-		return nil, fmt.Errorf("bucket %s not found", accountBucket)
-	}
-
-	userBucket, err := bucket.CreateBucketIfNotExists([]byte(userID))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create and get %s account bucket", userID)
-	}
-	return userBucket, nil
-}
-
-func nextSequenceAs[T constraints.Signed](bucket *bbolt.Bucket) (T, error) {
-	seq, err := bucket.NextSequence()
-	if err != nil {
-		return T(0), fmt.Errorf("failed to get next sequence of account bucket: %w", err)
-	}
-
-	id := T(seq)
-	if id < 0 || uint64(id) != seq {
-		return T(0), fmt.Errorf("sequence overflow, origin: %d, to_int32: %d", seq, id)
-	}
-
-	return id, nil
-}
-
-func int32ToBytes(v int32) []byte {
-	res := make([]byte, 4)
-	for i := range 4 {
-		res[3-i] = byte(v)
-		v >>= 8
-	}
-	return res
-}
-
-func bytesToInt32(v []byte) (int32, error) {
-	if len(v) > 4 {
-		return 0, fmt.Errorf("invalid int32: %v", v)
-	}
-	res := int32(0)
-	for i, b := range v {
-		res |= int32(b) << ((3 - i) * 8)
-	}
-	return res, nil
 }
