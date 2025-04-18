@@ -8,8 +8,8 @@ import (
 	"golang.org/x/exp/constraints"
 
 	"github.com/n101661/maney/pkg/utils"
-	"github.com/n101661/maney/server/internal/repository"
-	"github.com/n101661/maney/server/internal/repository/bolt"
+	"github.com/n101661/maney/server/repository"
+	"github.com/n101661/maney/server/repository/bolt"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )

@@ -10,7 +10,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/n101661/maney/pkg/utils"
-	"github.com/n101661/maney/server/internal/repository"
+	"github.com/n101661/maney/server/repository"
 )
 
 func Test_service_Login(t *testing.T) {

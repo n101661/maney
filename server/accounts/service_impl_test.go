@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"github.com/n101661/maney/server/internal/repository"
+	"github.com/n101661/maney/server/repository"
 )
 
 func Test_service_Create(t *testing.T) {

@@ -15,7 +15,7 @@ import (
 	"github.com/n101661/maney/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/n101661/maney/server/internal/repository"
+	"github.com/n101661/maney/server/repository"
 )
 
 type service struct {

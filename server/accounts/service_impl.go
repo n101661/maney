@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/n101661/maney/server/internal/repository"
+	"github.com/n101661/maney/server/repository"
 	"github.com/samber/lo"
 )
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/n101661/maney/server/internal/repository"
+	"github.com/n101661/maney/server/repository"
 )
 
 func Test_boltRepository(t *testing.T) {

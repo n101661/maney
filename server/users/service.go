@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/n101661/maney/server/internal/repository"
 	"github.com/n101661/maney/server/models"
+	"github.com/n101661/maney/server/repository"
 )
 
 // Service errors.

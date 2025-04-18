@@ -3,7 +3,7 @@ package bolt
 import (
 	"fmt"
 
-	"github.com/n101661/maney/server/internal/repository"
+	"github.com/n101661/maney/server/repository"
 
 	"go.etcd.io/bbolt"
 )
