@@ -4,6 +4,8 @@ mock: install-mock
 	mockgen -source=./server/repository/users.go -destination=./server/repository/users_mock.go -package=repository
 	mockgen -source=./server/accounts/service.go -destination=./server/accounts/service_mock.go -package=accounts
 	mockgen -source=./server/repository/accounts.go -destination=./server/repository/accounts_mock.go -package=repository
+	mockgen -source=./server/categories/service.go -destination=./server/categories/service_mock.go -package=categories
+	mockgen -source=./server/repository/categories.go -destination=./server/repository/categories_mock.go -package=repository
 
 models: install-openapi-codegen
 	@find . -type f -name *_gen.go -delete; \

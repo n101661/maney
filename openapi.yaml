@@ -465,6 +465,7 @@ components:
     CategoryType:
       type: string
       enum: ["expense", "income"]
+      default: "expense"
     CreatingCategory:
       type: object
       properties:

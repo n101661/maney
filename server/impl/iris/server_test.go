@@ -8,10 +8,12 @@ import (
 
 	"github.com/iris-contrib/httpexpect/v2"
 	"github.com/kataras/iris/v12/httptest"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/mock/gomock"
 
 	"github.com/n101661/maney/server/accounts"
+	"github.com/n101661/maney/server/categories"
 	"github.com/n101661/maney/server/models"
 	"github.com/n101661/maney/server/users"
 )
@@ -38,7 +40,6 @@ func TestServer(t *testing.T) {
 
 	controller := gomock.NewController(t)
 	userService := users.NewMockService(controller)
-	accountService := accounts.NewMockService(controller)
 
 	// Set up expectations of the mock service.
 	userService.EXPECT().Login(gomock.Any(), gomock.Any()).Return(&users.LoginReply{
@@ -55,6 +56,7 @@ func TestServer(t *testing.T) {
 	userService.EXPECT().UpdateConfig(gomock.Any(), gomock.Any()).Return(&users.UpdateConfigReply{}, nil).AnyTimes()
 	userService.EXPECT().GetConfig(gomock.Any(), gomock.Any()).Return(&users.GetConfigReply{}, nil).AnyTimes()
 
+	accountService := accounts.NewMockService(controller)
 	accountService.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&accounts.CreateReply{
 		Account: &accounts.Account{
 			ID: 0,
@@ -89,6 +91,37 @@ func TestServer(t *testing.T) {
 		},
 	}, nil).AnyTimes()
 	accountService.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(&accounts.DeleteReply{}, nil).AnyTimes()
+
+	categoryService := categories.NewMockService(controller)
+	categoryService.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&categories.CreateReply{
+		Type: 0,
+		Category: &categories.Category{
+			ID: 0,
+			BaseCategory: &categories.BaseCategory{
+				Name:   "",
+				IconID: 0,
+			},
+		},
+	}, nil).AnyTimes()
+	categoryService.EXPECT().List(gomock.Any(), gomock.Any()).Return(&categories.ListReply{
+		Categories: []*categories.Category{{
+			ID: 0,
+			BaseCategory: &categories.BaseCategory{
+				Name:   "",
+				IconID: 0,
+			},
+		}},
+	}, nil).AnyTimes()
+	categoryService.EXPECT().Update(gomock.Any(), gomock.Any()).Return(&categories.UpdateReply{
+		Category: &categories.Category{
+			ID: 0,
+			BaseCategory: &categories.BaseCategory{
+				Name:   "",
+				IconID: 0,
+			},
+		},
+	}, nil).AnyTimes()
+	categoryService.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(&categories.DeleteReply{}, nil).AnyTimes()
 
 	httpExpect := httptest.New(t, NewServer(&Config{}, &Controllers{
 		User: users.NewIrisController(userService),
@@ -139,6 +172,23 @@ func TestServer(t *testing.T) {
 	}).Expect().Status(httptest.StatusOK)
 
 	withAuthorization(httpExpect.DELETE("/accounts/1")).
+		Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.POST("/categories")).WithJSON(models.CreatingCategory{
+		IconId: lo.ToPtr(models.Id(0)),
+		Name:   "A",
+		Type:   models.Expense,
+	}).Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.GET("/categories")).
+		Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.PUT("/categories/1")).WithJSON(models.BasicCategory{
+		IconId: lo.ToPtr(models.Id(0)),
+		Name:   "A",
+	}).Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.DELETE("/categories/1")).
 		Expect().Status(httptest.StatusOK)
 }
 
