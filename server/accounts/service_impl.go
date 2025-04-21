@@ -61,10 +61,23 @@ func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, e
 	if r.Account == nil {
 		return nil, fmt.Errorf("nothing to update")
 	}
-	row, err := s.repository.Update(ctx, &repository.UpdateAccountRequest{
+
+	origin, err := s.repository.List(ctx, &repository.ListAccountsRequest{
 		UserID:    r.UserID,
-		AccountID: r.AccountID,
-		Account:   parseBaseAccount(r.Account),
+		AccountID: lo.ToPtr(r.AccountID),
+	})
+	if err != nil {
+		if errors.Is(err, repository.ErrDataNotFound) {
+			return nil, ErrAccountNotFound
+		}
+		return nil, err
+	}
+
+	row, err := s.repository.Update(ctx, &repository.UpdateAccountRequest{
+		UserID:       r.UserID,
+		AccountID:    r.AccountID,
+		Account:      parseBaseAccount(r.Account),
+		BalanceDelta: lo.ToPtr(r.Account.InitialBalance.Sub(origin.Accounts[0].InitialBalance)),
 	})
 	if err != nil {
 		if errors.Is(err, repository.ErrDataNotFound) {

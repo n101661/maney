@@ -115,24 +115,22 @@ func (repo *boltRepository) List(ctx context.Context, r *repository.ListAccounts
 			return nil
 		}
 
+		if r.AccountID != nil {
+			bid := types.Int32ToBytes(*r.AccountID)
+			data := bucket.Get(bid)
+
+			rows, err = addRow(rows, *r.AccountID, data, repo.opts.UnmarshalValue)
+			return err
+		}
+
 		return bucket.ForEach(func(k, v []byte) error {
 			id, err := types.BytesToInt32(k)
 			if err != nil {
 				return fmt.Errorf("invalid id of account: %w", err)
 			}
 
-			var account boltAccountModel
-			if err := repo.opts.UnmarshalValue(v, &account); err != nil {
-				return fmt.Errorf("failed to unmarshal data of account: %w", err)
-			}
-
-			rows = append(rows, &repository.Account{
-				ID:          id,
-				BaseAccount: account.BaseAccount,
-				Balance:     account.Balance,
-			})
-
-			return nil
+			rows, err = addRow(rows, id, v, repo.opts.UnmarshalValue)
+			return err
 		})
 	})
 	if err != nil {
@@ -144,6 +142,26 @@ func (repo *boltRepository) List(ctx context.Context, r *repository.ListAccounts
 	return &repository.ListAccountsReply{
 		Accounts: rows,
 	}, nil
+}
+
+func addRow(
+	rows []*repository.Account,
+	id int32,
+	value []byte,
+	UnmarshalValue func([]byte, interface{}) error,
+) ([]*repository.Account, error) {
+	var account boltAccountModel
+	if err := UnmarshalValue(value, &account); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal data of account: %w", err)
+	}
+
+	rows = append(rows, &repository.Account{
+		ID:          id,
+		BaseAccount: account.BaseAccount,
+		Balance:     account.Balance,
+	})
+
+	return rows, nil
 }
 
 func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateAccountRequest) (*repository.Account, error) {
@@ -170,7 +188,7 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateAcco
 			current.BaseAccount = lo.ToPtr(*r.Account)
 		}
 		if r.BalanceDelta != nil {
-			current.Balance.Add(*r.BalanceDelta)
+			current.Balance = current.Balance.Add(*r.BalanceDelta)
 		}
 
 		data, err = repo.opts.MarshalValue(&current)

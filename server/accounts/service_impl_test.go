@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -202,6 +203,9 @@ func Test_service_Update(t *testing.T) {
 		var (
 			initBalance = decimal.NewFromInt(1)
 			balance     = decimal.NewFromInt(2)
+
+			newInitBalance = decimal.NewFromInt(2)
+			newBalance     = decimal.NewFromInt(3)
 		)
 
 		assert := assert.New(t)
@@ -210,23 +214,40 @@ func Test_service_Update(t *testing.T) {
 		mockRepo := repository.NewMockAccountRepository(controller)
 		gomock.InOrder(
 			mockRepo.EXPECT().
+				List(gomock.Any(), &repository.ListAccountsRequest{
+					UserID:    userID,
+					AccountID: lo.ToPtr[int32](accountID),
+				}).
+				Return(&repository.ListAccountsReply{
+					Accounts: []*repository.Account{{
+						ID: accountID,
+						BaseAccount: &repository.BaseAccount{
+							Name:           accountName,
+							IconID:         iconID,
+							InitialBalance: initBalance,
+						},
+						Balance: balance,
+					}},
+				}, nil),
+			mockRepo.EXPECT().
 				Update(gomock.Any(), &repository.UpdateAccountRequest{
 					UserID:    userID,
 					AccountID: accountID,
 					Account: &repository.BaseAccount{
 						Name:           accountName,
 						IconID:         iconID,
-						InitialBalance: initBalance,
+						InitialBalance: newInitBalance,
 					},
+					BalanceDelta: lo.ToPtr(newInitBalance.Sub(initBalance)),
 				}).
 				Return(&repository.Account{
 					ID: accountID,
 					BaseAccount: &repository.BaseAccount{
 						Name:           accountName,
 						IconID:         iconID,
-						InitialBalance: initBalance,
+						InitialBalance: newInitBalance,
 					},
-					Balance: balance,
+					Balance: newBalance,
 				}, nil),
 		)
 
@@ -241,7 +262,7 @@ func Test_service_Update(t *testing.T) {
 			Account: &BaseAccount{
 				Name:           accountName,
 				IconID:         iconID,
-				InitialBalance: initBalance,
+				InitialBalance: newInitBalance,
 			},
 		})
 		assert.NoError(err)
@@ -251,9 +272,9 @@ func Test_service_Update(t *testing.T) {
 				BaseAccount: &BaseAccount{
 					Name:           accountName,
 					IconID:         iconID,
-					InitialBalance: initBalance,
+					InitialBalance: newInitBalance,
 				},
-				Balance: balance,
+				Balance: newBalance,
 			},
 		}, reply)
 	})
@@ -263,7 +284,7 @@ func Test_service_Update(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockAccountRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
+			mockRepo.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
 		)
 
 		s, err := NewService(mockRepo)

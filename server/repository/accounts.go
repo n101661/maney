@@ -43,7 +43,8 @@ type BaseAccount struct {
 }
 
 type ListAccountsRequest struct {
-	UserID string
+	UserID    string
+	AccountID *int32
 }
 
 type ListAccountsReply struct {
