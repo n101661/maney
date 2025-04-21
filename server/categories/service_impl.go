@@ -51,6 +51,7 @@ func (s *service) List(ctx context.Context, r *ListRequest) (*ListReply, error) 
 		if errors.Is(err, repository.ErrDataNotFound) {
 			return nil, ErrCategoryNotFound
 		}
+		return nil, err
 	}
 
 	return &ListReply{
@@ -71,6 +72,7 @@ func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, e
 		if errors.Is(err, repository.ErrDataNotFound) {
 			return nil, ErrCategoryNotFound
 		}
+		return nil, err
 	}
 	return &UpdateReply{
 		Category: row,
@@ -86,6 +88,7 @@ func (s *service) Delete(ctx context.Context, r *DeleteRequest) (*DeleteReply, e
 		if errors.Is(err, repository.ErrDataNotFound) {
 			return nil, ErrCategoryNotFound
 		}
+		return nil, err
 	}
 	return &DeleteReply{}, nil
 }
