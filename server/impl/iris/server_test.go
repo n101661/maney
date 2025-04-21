@@ -124,7 +124,9 @@ func TestServer(t *testing.T) {
 	categoryService.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(&categories.DeleteReply{}, nil).AnyTimes()
 
 	httpExpect := httptest.New(t, NewServer(&Config{}, &Controllers{
-		User: users.NewIrisController(userService),
+		User:     users.NewIrisController(userService),
+		Account:  accounts.NewIrisController(accountService),
+		Category: categories.NewIrisController(categoryService),
 	}).app)
 
 	loginResponse := httpExpect.POST("/login").WithJSON(models.LoginRequest{
