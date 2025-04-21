@@ -12,8 +12,9 @@ import (
 )
 
 type Config struct {
-	App  *AppConfig         `toml:"application"`
-	Auth *AuthServiceConfig `toml:"authentication-service"`
+	App     *AppConfig         `toml:"application"`
+	Auth    *AuthServiceConfig `toml:"authentication-service"`
+	Storage *StorageConfig     `toml:"storage"`
 }
 
 type AppConfig struct {
@@ -24,13 +25,15 @@ type AppConfig struct {
 }
 
 type AuthServiceConfig struct {
-	BoltDBDir string `toml:"bolt-db-dir" comment:"Directory storing the BoltDB file."`
-
 	SaltPasswordRound       int               `toml:"salt-password-round" comment:"Number of rounds to salt the password. If the value is not provided or less than 0, the default is 10."`
 	RefreshTokenSigningKey  string            `toml:"refresh-token-signing-key" comment:"Private key to sign the refresh token."`
 	RefreshTokenExpireAfter encoding.Duration `toml:"refresh-token-expire-after" comment:"Period of the refresh token expiration. If the value is not provided, the default is 30 days."`
 	AccessTokenSigningKey   string            `toml:"access-token-signing-key" comment:"Private key to sign the access token."`
 	AccessTokenExpireAfter  encoding.Duration `toml:"access-token-expire-after" comment:"Period of the access token expiration. If the value is not provided, the default is 10 minutes."`
+}
+
+type StorageConfig struct {
+	BoltDBDir string `toml:"bolt-db-dir" comment:"Directory storing the BoltDB file."`
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -59,12 +62,14 @@ func CreateDefaultConfig(path string) (err error) {
 			},
 		},
 		Auth: &AuthServiceConfig{
-			BoltDBDir:               "./db",
 			SaltPasswordRound:       10,
 			RefreshTokenSigningKey:  "THIS_IS_UNSECURE_SIGNED_KEY",
 			RefreshTokenExpireAfter: encoding.Duration(24 * time.Hour * 30),
 			AccessTokenSigningKey:   "THIS_IS_UNSECURE_SIGNED_KEY",
 			AccessTokenExpireAfter:  encoding.Duration(10 * time.Minute),
+		},
+		Storage: &StorageConfig{
+			BoltDBDir: "./db",
 		},
 	}
 
