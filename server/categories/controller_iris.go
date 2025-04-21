@@ -6,178 +6,97 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/samber/lo"
 
+	irisController "github.com/n101661/maney/server/controller/iris"
 	"github.com/n101661/maney/server/models"
 	"github.com/n101661/maney/server/repository"
 )
 
 type IrisController struct {
 	s Service
+	*irisController.SimpleCreateTemplate[models.CreatingCategory, CreateRequest, CreateReply, models.ObjectId]
+	*irisController.SimpleListTemplate[ListRequest, ListReply, []*models.Category]
+	*irisController.SimpleUpdateTemplate[models.BasicCategory, UpdateRequest, UpdateReply]
+	*irisController.SimpleDeleteTemplate[DeleteRequest, DeleteReply]
 }
 
 func NewIrisController(s Service) *IrisController {
 	return &IrisController{
 		s: s,
-	}
-}
-
-func (controller *IrisController) Create(c iris.Context) {
-	var r models.CreatingCategory
-	if err := c.ReadJSON(&r); err != nil {
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		return
-	}
-
-	type_, err := parseType(string(r.Type))
-	if err != nil {
-		c.StopWithText(iris.StatusBadRequest, err.Error())
-		return
-	}
-
-	user := c.User()
-	if user == nil {
-		c.StopWithJSON(iris.StatusUnauthorized, &models.EmptyResponse{})
-		return
-	}
-
-	userID, err := user.GetID()
-	if err != nil {
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		return
-	}
-
-	reply, err := controller.s.Create(c.Request().Context(), &CreateRequest{
-		UserID: userID,
-		Type:   type_,
-		Category: &BaseCategory{
-			Name:   r.Name,
-			IconID: int32(lo.FromPtrOr(r.IconId, 0)),
+		SimpleCreateTemplate: &irisController.SimpleCreateTemplate[models.CreatingCategory, CreateRequest, CreateReply, models.ObjectId]{
+			Service: s,
+			ParseServiceRequest: func(userID string, r *models.CreatingCategory) (*CreateRequest, error) {
+				type_, err := parseType(string(r.Type))
+				if err != nil {
+					return nil, err
+				}
+				return &CreateRequest{
+					UserID: userID,
+					Type:   type_,
+					Category: &BaseCategory{
+						Name:   r.Name,
+						IconID: int32(lo.FromPtrOr(r.IconId, 0)),
+					},
+				}, nil
+			},
+			ParseAPIResponse: func(reply *CreateReply) (*models.ObjectId, error) {
+				return &models.ObjectId{
+					Id: lo.ToPtr(models.Id(reply.Category.ID)),
+				}, nil
+			},
 		},
-	})
-	if err != nil {
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		return
-	}
-
-	c.StopWithJSON(iris.StatusOK, &models.ObjectId{
-		Id: lo.ToPtr(models.Id(reply.Category.ID)),
-	})
-}
-
-func (controller *IrisController) List(c iris.Context) {
-	type_, err := parseType(c.URLParamDefault("type", repository.CategoryTypeExpense.String()))
-	if err != nil {
-		c.StopWithText(iris.StatusBadRequest, err.Error())
-		return
-	}
-
-	user := c.User()
-	if user == nil {
-		c.StopWithJSON(iris.StatusUnauthorized, &models.EmptyResponse{})
-		return
-	}
-
-	userID, err := user.GetID()
-	if err != nil {
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		return
-	}
-
-	reply, err := controller.s.List(c.Request().Context(), &ListRequest{
-		UserID: userID,
-		Type:   type_,
-	})
-	if err != nil {
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		return
-	}
-
-	c.StopWithJSON(iris.StatusOK, lo.Map(reply.Categories, func(item *Category, _ int) *models.Category {
-		return &models.Category{
-			Id:     lo.ToPtr(models.Id(item.ID)),
-			Name:   item.Name,
-			IconId: lo.ToPtr(models.Id(item.IconID)),
-		}
-	}))
-}
-
-func (controller *IrisController) Update(c iris.Context) {
-	categoryID, err := c.Params().GetInt32("categoryId")
-	if err != nil {
-		c.StopWithText(iris.StatusBadRequest, "missing or invalid category id")
-		return
-	}
-
-	var r models.BasicCategory
-	if err := c.ReadJSON(&r); err != nil {
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		return
-	}
-
-	user := c.User()
-	if user == nil {
-		c.StopWithJSON(iris.StatusUnauthorized, &models.EmptyResponse{})
-		return
-	}
-
-	userID, err := user.GetID()
-	if err != nil {
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		return
-	}
-
-	_, err = controller.s.Update(c.Request().Context(), &UpdateRequest{
-		UserID:     userID,
-		CategoryID: categoryID,
-		Category: &BaseCategory{
-			Name:   r.Name,
-			IconID: int32(lo.FromPtrOr(r.IconId, 0)),
+		SimpleListTemplate: &irisController.SimpleListTemplate[ListRequest, ListReply, []*models.Category]{
+			Service: s,
+			ParseServiceRequest: func(c iris.Context, userID string) (*ListRequest, error) {
+				type_, err := parseType(c.URLParamDefault("type", repository.CategoryTypeExpense.String()))
+				if err != nil {
+					return nil, err
+				}
+				return &ListRequest{
+					UserID: userID,
+					Type:   type_,
+				}, nil
+			},
+			ParseAPIResponse: func(reply *ListReply) (*[]*models.Category, error) {
+				return lo.ToPtr(lo.Map(reply.Categories, func(item *Category, _ int) *models.Category {
+					return &models.Category{
+						Id:     lo.ToPtr(models.Id(item.ID)),
+						Name:   item.Name,
+						IconId: lo.ToPtr(models.Id(item.IconID)),
+					}
+				})), nil
+			},
 		},
-	})
-	if err != nil {
-		if errors.Is(err, ErrCategoryNotFound) {
-			c.StopWithText(iris.StatusNotFound, "no [%d] category id", categoryID)
-		} else {
-			c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		}
-		return
+		SimpleUpdateTemplate: &irisController.SimpleUpdateTemplate[models.BasicCategory, UpdateRequest, UpdateReply]{
+			Placeholder: "categoryId",
+			Service:     s,
+			ParseServiceRequest: func(userID string, id int32, r *models.BasicCategory) (*UpdateRequest, error) {
+				return &UpdateRequest{
+					UserID:     userID,
+					CategoryID: id,
+					Category: &BaseCategory{
+						Name:   r.Name,
+						IconID: int32(lo.FromPtrOr(r.IconId, 0)),
+					},
+				}, nil
+			},
+			ResourceNotFound: func(err error) bool {
+				return errors.Is(err, ErrCategoryNotFound)
+			},
+		},
+		SimpleDeleteTemplate: &irisController.SimpleDeleteTemplate[DeleteRequest, DeleteReply]{
+			Placeholder: "categoryId",
+			Service:     s,
+			ParseServiceRequest: func(userID string, id int32) *DeleteRequest {
+				return &DeleteRequest{
+					UserID:     userID,
+					CategoryID: id,
+				}
+			},
+			ResourceNotFound: func(err error) bool {
+				return errors.Is(err, ErrCategoryNotFound)
+			},
+		},
 	}
-
-	c.StopWithJSON(iris.StatusOK, &models.EmptyResponse{})
-}
-
-func (controller *IrisController) Delete(c iris.Context) {
-	categoryID, err := c.Params().GetInt32("categoryId")
-	if err != nil {
-		c.StopWithText(iris.StatusBadRequest, "missing or invalid category id")
-		return
-	}
-
-	user := c.User()
-	if user == nil {
-		c.StopWithJSON(iris.StatusUnauthorized, &models.EmptyResponse{})
-		return
-	}
-
-	userID, err := user.GetID()
-	if err != nil {
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		return
-	}
-
-	_, err = controller.s.Delete(c.Request().Context(), &DeleteRequest{
-		UserID:     userID,
-		CategoryID: categoryID,
-	})
-	if err != nil {
-		if errors.Is(err, ErrCategoryNotFound) {
-			c.StopWithText(iris.StatusNotFound, "no [%d] category id", categoryID)
-		} else {
-			c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
-		}
-		return
-	}
-
-	c.StopWithJSON(iris.StatusOK, &models.EmptyResponse{})
 }
 
 func parseType(s string) (Type, error) {
