@@ -209,7 +209,10 @@ func (controller *IrisController) ValidateAccessToken(c iris.Context) {
 	})
 	if err != nil {
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
+		return
 	}
+
+	c.Next()
 }
 
 func (controller *IrisController) getAccessToken(c iris.Context) string {
@@ -294,18 +297,14 @@ type user struct {
 	ID    string
 }
 
-func (u *user) GetRaw() (interface{}, error) {
-	return u, nil
+func (u *user) GetAuthorization() string {
+	return AuthType
 }
 
-func (u *user) GetAuthorization() (string, error) {
-	return AuthType, nil
+func (u *user) GetID() string {
+	return u.ID
 }
 
-func (u *user) GetID() (string, error) {
-	return u.ID, nil
-}
-
-func (u *user) GetToken() ([]byte, error) {
-	return []byte(u.Token), nil
+func (u *user) GetToken() []byte {
+	return []byte(u.Token)
 }
