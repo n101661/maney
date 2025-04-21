@@ -166,8 +166,10 @@ func Test_service_List(t *testing.T) {
 			UserID: "user",
 			Type:   0,
 		})
-		assert.ErrorIs(err, ErrCategoryNotFound)
-		assert.Nil(reply)
+		assert.NoError(err)
+		assert.Equal(&ListReply{
+			Categories: []*Category{},
+		}, reply)
 	})
 }
 

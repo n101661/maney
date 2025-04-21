@@ -13,8 +13,6 @@ var (
 
 type Service interface {
 	Create(context.Context, *CreateRequest) (*CreateReply, error)
-	// List returns error:
-	//  - ErrCategoryNotFound if there is no matched category found.
 	List(context.Context, *ListRequest) (*ListReply, error)
 	// Update returns error:
 	//  - ErrCategoryNotFound if the category does not exist.
@@ -53,7 +51,7 @@ type UpdateRequest struct {
 	Category *BaseCategory
 }
 
-type UpdateReply struct{
+type UpdateReply struct {
 	Category *Category
 }
 

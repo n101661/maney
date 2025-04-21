@@ -87,10 +87,6 @@ func (controller *IrisController) List(c iris.Context) {
 		Type:   type_,
 	})
 	if err != nil {
-		if errors.Is(err, ErrCategoryNotFound) {
-			c.StopWithJSON(iris.StatusOK, []*models.Category{})
-			return
-		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}

@@ -49,7 +49,9 @@ func (s *service) List(ctx context.Context, r *ListRequest) (*ListReply, error) 
 	})
 	if err != nil {
 		if errors.Is(err, repository.ErrDataNotFound) {
-			return nil, ErrCategoryNotFound
+			return &ListReply{
+				Categories: []*Category{},
+			}, nil
 		}
 		return nil, err
 	}
