@@ -111,9 +111,12 @@ func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateCate
 func (repo *boltRepository) List(ctx context.Context, r *repository.ListCategoriesRequest) (*repository.ListCategoriesReply, error) {
 	rows := []*repository.Category{}
 	err := repo.db.View(func(tx *bbolt.Tx) error {
-		userBucket, err := bolt.GetUserBucketOrCreate(tx, categoryBucket, r.UserID)
+		userBucket, err := bolt.GetUserBucket(tx, categoryBucket, r.UserID)
 		if err != nil {
 			return err
+		}
+		if userBucket == nil {
+			return nil
 		}
 
 		bucket := userBucket.Bucket([]byte{byte(r.Type)})

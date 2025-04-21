@@ -107,9 +107,12 @@ func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateAcco
 func (repo *boltRepository) List(ctx context.Context, r *repository.ListAccountsRequest) (*repository.ListAccountsReply, error) {
 	rows := []*repository.Account{}
 	err := repo.db.View(func(tx *bbolt.Tx) error {
-		bucket, err := bolt.GetUserBucketOrCreate(tx, accountBucket, r.UserID)
+		bucket, err := bolt.GetUserBucket(tx, accountBucket, r.UserID)
 		if err != nil {
 			return err
+		}
+		if bucket == nil {
+			return nil
 		}
 
 		return bucket.ForEach(func(k, v []byte) error {

@@ -75,6 +75,16 @@ func Delete[T any](db *bbolt.DB, bucketID, key string, opts *Options) (*T, error
 	return &value, nil
 }
 
+func GetUserBucket(tx *bbolt.Tx, bucketName, userID string) (*bbolt.Bucket, error) {
+	bucket := tx.Bucket([]byte(bucketName))
+	if bucket == nil {
+		return nil, fmt.Errorf("bucket %s not found", bucketName)
+	}
+
+	userBucket := bucket.Bucket([]byte(userID))
+	return userBucket, nil
+}
+
 func GetUserBucketOrCreate(tx *bbolt.Tx, bucketName, userID string) (*bbolt.Bucket, error) {
 	bucket := tx.Bucket([]byte(bucketName))
 	if bucket == nil {
@@ -83,7 +93,7 @@ func GetUserBucketOrCreate(tx *bbolt.Tx, bucketName, userID string) (*bbolt.Buck
 
 	userBucket, err := bucket.CreateBucketIfNotExists([]byte(userID))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create and get %s account bucket", userID)
+		return nil, fmt.Errorf("failed to create and get %s account bucket: %v", userID, err)
 	}
 	return userBucket, nil
 }
