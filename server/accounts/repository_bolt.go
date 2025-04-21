@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	accountBucket        = "account"
-	accountBalanceBucket = "accountBalance"
+	accountBucket = "account"
 )
 
 type boltRepository struct {
@@ -47,10 +46,6 @@ func (s *boltRepository) init() error {
 	return s.db.Update(func(tx *bbolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(accountBucket)); err != nil {
 			return fmt.Errorf("failed to create account bucket: %w", err)
-		}
-
-		if _, err := tx.CreateBucketIfNotExists([]byte(accountBalanceBucket)); err != nil {
-			return fmt.Errorf("failed to create account balance bucket: %w", err)
 		}
 
 		return nil
