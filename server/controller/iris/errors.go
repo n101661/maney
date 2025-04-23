@@ -5,7 +5,7 @@ type internalError struct {
 }
 
 func (err *internalError) Error() string {
-	return err.Error()
+	return err.err.Error()
 }
 
 func InternalError(err error) error {
