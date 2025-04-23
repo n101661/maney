@@ -40,7 +40,7 @@ func NewIrisController(s Service) *IrisController {
 			},
 			ParseAPIResponse: func(reply *CreateReply) (*models.ObjectId, error) {
 				return &models.ObjectId{
-					Id: lo.ToPtr(models.Id(reply.Category.ID)),
+					Id: lo.ToPtr(models.Id(reply.Category.PublicID)),
 				}, nil
 			},
 		},
@@ -59,9 +59,9 @@ func NewIrisController(s Service) *IrisController {
 			ParseAPIResponse: func(reply *ListReply) (*[]*models.Category, error) {
 				return lo.ToPtr(lo.Map(reply.Categories, func(item *Category, _ int) *models.Category {
 					return &models.Category{
-						Id:     lo.ToPtr(models.Id(item.ID)),
+						Id:     lo.ToPtr(models.Id(item.PublicID)),
 						Name:   item.Name,
-						IconId: lo.ToPtr(models.Id(item.IconID)),
+						IconId: lo.ToPtr(models.IconId(item.IconID)),
 					}
 				})), nil
 			},
@@ -69,10 +69,10 @@ func NewIrisController(s Service) *IrisController {
 		SimpleUpdateTemplate: &irisController.SimpleUpdateTemplate[models.BasicCategory, UpdateRequest, UpdateReply]{
 			Placeholder: "categoryId",
 			Service:     s,
-			ParseServiceRequest: func(userID string, id int32, r *models.BasicCategory) (*UpdateRequest, error) {
+			ParseServiceRequest: func(userID string, publicID string, r *models.BasicCategory) (*UpdateRequest, error) {
 				return &UpdateRequest{
-					UserID:     userID,
-					CategoryID: id,
+					UserID:           userID,
+					CategoryPublicID: publicID,
 					Category: &BaseCategory{
 						Name:   r.Name,
 						IconID: int32(lo.FromPtrOr(r.IconId, 0)),
@@ -86,10 +86,10 @@ func NewIrisController(s Service) *IrisController {
 		SimpleDeleteTemplate: &irisController.SimpleDeleteTemplate[DeleteRequest, DeleteReply]{
 			Placeholder: "categoryId",
 			Service:     s,
-			ParseServiceRequest: func(userID string, id int32) *DeleteRequest {
+			ParseServiceRequest: func(userID string, publicID string) *DeleteRequest {
 				return &DeleteRequest{
-					UserID:     userID,
-					CategoryID: id,
+					UserID:           userID,
+					CategoryPublicID: publicID,
 				}
 			},
 			ResourceNotFound: func(err error) bool {

@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	categoryBucket = "category"
+	categoryBucket     = "category"
+	publicIDToIDBucket = "publicIDToIDBucket"
 )
 
 type boltRepository struct {
@@ -47,6 +48,10 @@ func (s *boltRepository) init() error {
 			return fmt.Errorf("failed to create category bucket: %w", err)
 		}
 
+		if _, err := tx.CreateBucketIfNotExists([]byte(publicIDToIDBucket)); err != nil {
+			return fmt.Errorf("failed to create %s bucket: %w", publicIDToIDBucket, err)
+		}
+
 		return nil
 	})
 }
@@ -64,7 +69,15 @@ func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateCate
 			return err
 		}
 
+		publicIDBucket := tx.Bucket([]byte(publicIDToIDBucket))
+
 		for i, category := range r.Categories {
+			publicID := []byte(category.PublicID)
+
+			if id := publicIDBucket.Get(publicID); id != nil {
+				return repository.ErrDataExists
+			}
+
 			id, err := bolt.NextSequence[int32](userBucket)
 			if err != nil {
 				return err
@@ -73,20 +86,26 @@ func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateCate
 			bid := types.Int32ToBytes(id)
 
 			if userBucket.Get(bid) != nil {
-				return repository.ErrDataExists
+				return fmt.Errorf("duplicated next sequence[%d]", id)
 			}
 			if bucket.Get(bid) != nil {
 				return fmt.Errorf("not found in category bucket but found in category type bucket")
 			}
 
 			data, err := repo.opts.MarshalValue(&boltCategoryModel{
-				Name:   category.Name,
-				IconID: category.IconID,
+				PublicID: category.PublicID,
+				BaseCategory: &repository.BaseCategory{
+					Name:   category.Name,
+					IconID: category.IconID,
+				},
 			})
 			if err != nil {
 				return fmt.Errorf("failed to marshal category: %w", err)
 			}
 
+			if err := publicIDBucket.Put(publicID, bid); err != nil {
+				return err
+			}
 			if err := userBucket.Put(bid, []byte{byte(r.Type)}); err != nil {
 				return err
 			}
@@ -95,8 +114,12 @@ func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateCate
 			}
 
 			rows[i] = &repository.Category{
-				ID:           id,
-				BaseCategory: lo.ToPtr(*category),
+				ID:       id,
+				PublicID: category.PublicID,
+				BaseCategory: &repository.BaseCategory{
+					Name:   category.Name,
+					IconID: category.IconID,
+				},
 			}
 		}
 
@@ -137,7 +160,8 @@ func (repo *boltRepository) List(ctx context.Context, r *repository.ListCategori
 
 			rows = append(rows, &repository.Category{
 				ID:           id,
-				BaseCategory: lo.ToPtr(repository.BaseCategory(category)),
+				PublicID:     category.PublicID,
+				BaseCategory: category.BaseCategory,
 			})
 
 			return nil
@@ -162,11 +186,14 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateCate
 			return err
 		}
 
-		bid := types.Int32ToBytes(r.CategoryID)
+		bid := tx.Bucket([]byte(publicIDToIDBucket)).Get([]byte(r.CategoryPublicID))
+		if bid == nil {
+			return repository.ErrDataNotFound
+		}
 
 		bucketName := userBucket.Get(bid)
 		if bucketName == nil {
-			return repository.ErrDataNotFound
+			return fmt.Errorf("found in %s bucket but not found in category type bucket", publicIDToIDBucket)
 		}
 
 		bucket := userBucket.Bucket(bucketName)
@@ -185,7 +212,7 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateCate
 		}
 
 		if r.Category != nil {
-			current = boltCategoryModel(*r.Category)
+			current.BaseCategory = lo.ToPtr(*r.Category)
 		}
 
 		data, err = repo.opts.MarshalValue(&current)
@@ -197,9 +224,15 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateCate
 			return fmt.Errorf("failed to update category: %v", err)
 		}
 
+		id, err := types.BytesToInt32(bid)
+		if err != nil {
+			return err
+		}
+
 		res = &repository.Category{
-			ID:           r.CategoryID,
-			BaseCategory: lo.ToPtr(repository.BaseCategory(current)),
+			ID:           id,
+			PublicID:     current.PublicID,
+			BaseCategory: current.BaseCategory,
 		}
 
 		return nil
@@ -211,19 +244,26 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateCate
 }
 
 func (repo *boltRepository) Delete(ctx context.Context, r *repository.DeleteCategoriesRequest) ([]*Category, error) {
-	rows := make([]*repository.Category, len(r.CategoryIDs))
+	rows := make([]*repository.Category, len(r.CategoryPublicIDs))
 	err := repo.db.Update(func(tx *bbolt.Tx) error {
 		userBucket, err := bolt.GetUserBucketOrCreate(tx, categoryBucket, r.UserID)
 		if err != nil {
 			return err
 		}
 
-		for i, categoryID := range r.CategoryIDs {
-			bid := types.Int32ToBytes(categoryID)
+		publicIDBucket := tx.Bucket([]byte(publicIDToIDBucket))
+
+		for i, publicID := range r.CategoryPublicIDs {
+			bPublicID := []byte(publicID)
+
+			bid := publicIDBucket.Get(bPublicID)
+			if bid == nil {
+				return repository.ErrDataNotFound
+			}
 
 			bucketName := userBucket.Get(bid)
 			if bucketName == nil {
-				return repository.ErrDataNotFound
+				return fmt.Errorf("found in %s bucket but not found in %s bucket", publicIDToIDBucket, categoryBucket)
 			}
 
 			bucket := userBucket.Bucket(bucketName)
@@ -236,6 +276,9 @@ func (repo *boltRepository) Delete(ctx context.Context, r *repository.DeleteCate
 				return fmt.Errorf("found in category bucket but not found in category type bucket")
 			}
 
+			if err := publicIDBucket.Delete(bPublicID); err != nil {
+				return fmt.Errorf("failed to delete from %s bucket: %w", publicIDToIDBucket, err)
+			}
 			if err := userBucket.Delete(bid); err != nil {
 				return fmt.Errorf("failed to delete category from category bucket: %w", err)
 			}
@@ -248,9 +291,15 @@ func (repo *boltRepository) Delete(ctx context.Context, r *repository.DeleteCate
 				return fmt.Errorf("failed to unmarshal data of category: %w", err)
 			}
 
+			id, err := types.BytesToInt32(bid)
+			if err != nil {
+				return err
+			}
+
 			rows[i] = &repository.Category{
-				ID:           categoryID,
-				BaseCategory: lo.ToPtr(repository.BaseCategory(category)),
+				ID:           id,
+				PublicID:     publicID,
+				BaseCategory: category.BaseCategory,
 			}
 		}
 
@@ -267,6 +316,6 @@ func (repo *boltRepository) Close() error {
 }
 
 type boltCategoryModel struct {
-	Name   string
-	IconID int32
+	PublicID string
+	*repository.BaseCategory
 }

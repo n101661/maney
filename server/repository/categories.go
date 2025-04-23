@@ -30,7 +30,12 @@ type CategoryRepository interface {
 type CreateCategoriesRequest struct {
 	UserID     string
 	Type       CategoryType
-	Categories []*BaseCategory
+	Categories []*BaseCreateCategory
+}
+
+type BaseCreateCategory struct {
+	PublicID string
+	*BaseCategory
 }
 
 type ListCategoriesRequest struct {
@@ -43,15 +48,15 @@ type ListCategoriesReply struct {
 }
 
 type UpdateCategoryRequest struct {
-	UserID     string
-	CategoryID int32
+	UserID           string
+	CategoryPublicID string
 
 	Category *BaseCategory
 }
 
 type DeleteCategoriesRequest struct {
-	UserID      string
-	CategoryIDs []int32
+	UserID            string
+	CategoryPublicIDs []string
 }
 
 const (
@@ -83,7 +88,8 @@ func ToCategoryType(s string) (CategoryType, error) {
 }
 
 type Category struct {
-	ID int32
+	ID       int32
+	PublicID string
 	*BaseCategory
 }
 

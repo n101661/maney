@@ -41,7 +41,7 @@ func NewIrisController(s Service) *IrisController {
 			},
 			ParseAPIResponse: func(reply *CreateReply) (*models.ObjectId, error) {
 				return &models.ObjectId{
-					Id: lo.ToPtr(models.Id(reply.Account.ID)),
+					Id: lo.ToPtr(models.Id(reply.Account.PublicID)),
 				}, nil
 			},
 		},
@@ -55,9 +55,9 @@ func NewIrisController(s Service) *IrisController {
 			ParseAPIResponse: func(reply *ListReply) (*[]*models.Account, error) {
 				return lo.ToPtr(lo.Map(reply.Accounts, func(item *Account, _ int) *models.Account {
 					return &models.Account{
-						Id:             lo.ToPtr(models.Id(item.ID)),
+						Id:             lo.ToPtr(models.Id(item.PublicID)),
 						Name:           item.Name,
-						IconId:         models.Id(item.IconID),
+						IconId:         models.IconId(item.IconID),
 						InitialBalance: item.InitialBalance.String(),
 						Balance:        lo.ToPtr(item.Balance.String()),
 					}
@@ -67,14 +67,14 @@ func NewIrisController(s Service) *IrisController {
 		SimpleUpdateTemplate: &irisController.SimpleUpdateTemplate[models.BasicAccount, UpdateRequest, UpdateReply]{
 			Placeholder: "accountId",
 			Service:     s,
-			ParseServiceRequest: func(userID string, id int32, r *models.BasicAccount) (*UpdateRequest, error) {
+			ParseServiceRequest: func(userID string, publicID string, r *models.BasicAccount) (*UpdateRequest, error) {
 				initialBalance, err := decimal.NewFromString(r.InitialBalance)
 				if err != nil {
 					return nil, fmt.Errorf("invalid decimal[%s]", r.InitialBalance)
 				}
 				return &UpdateRequest{
-					UserID:    userID,
-					AccountID: id,
+					UserID:          userID,
+					AccountPublicID: publicID,
 					Account: &BaseAccount{
 						Name:           r.Name,
 						IconID:         int32(r.IconId),
@@ -89,10 +89,10 @@ func NewIrisController(s Service) *IrisController {
 		SimpleDeleteTemplate: &irisController.SimpleDeleteTemplate[DeleteRequest, DeleteReply]{
 			Placeholder: "accountId",
 			Service:     s,
-			ParseServiceRequest: func(userID string, id int32) *DeleteRequest {
+			ParseServiceRequest: func(userID string, publicID string) *DeleteRequest {
 				return &DeleteRequest{
-					UserID:    userID,
-					AccountID: id,
+					UserID:          userID,
+					AccountPublicID: publicID,
 				}
 			},
 			ResourceNotFound: func(err error) bool {

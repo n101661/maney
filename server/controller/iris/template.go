@@ -120,17 +120,13 @@ type SimpleUpdateTemplate[RequestBody, ServiceRequest, ServiceReply any] struct 
 
 	// ParseServiceRequest the returned error is considered as user bad request and write 400 status code.
 	// If you want to write 500 status code, wrap the error by InternalError function.
-	ParseServiceRequest func(userID string, id int32, r *RequestBody) (*ServiceRequest, error)
+	ParseServiceRequest func(userID string, publicID string, r *RequestBody) (*ServiceRequest, error)
 	// ResourceNotFound returns true if the error is represented as resource not found error.
 	ResourceNotFound func(error) bool
 }
 
 func (t *SimpleUpdateTemplate[RequestBody, ServiceRequest, ServiceReply]) Update(c iris.Context) {
-	id, err := c.Params().GetInt32(t.Placeholder)
-	if err != nil {
-		c.StopWithText(iris.StatusBadRequest, "missing or invalid %s", t.Placeholder)
-		return
-	}
+	publicID := c.Params().GetString(t.Placeholder)
 
 	var r RequestBody
 	if err := c.ReadJSON(&r); err != nil {
@@ -150,7 +146,7 @@ func (t *SimpleUpdateTemplate[RequestBody, ServiceRequest, ServiceReply]) Update
 		return
 	}
 
-	sr, err := t.ParseServiceRequest(userID, id, &r)
+	sr, err := t.ParseServiceRequest(userID, publicID, &r)
 	if err != nil {
 		if e, ok := err.(*internalError); ok {
 			c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(e.err))
@@ -162,7 +158,7 @@ func (t *SimpleUpdateTemplate[RequestBody, ServiceRequest, ServiceReply]) Update
 
 	_, err = t.Service.Update(c.Request().Context(), sr)
 	if t.ResourceNotFound(err) {
-		c.StopWithText(iris.StatusNotFound, "no [%d] %s", id, t.Placeholder)
+		c.StopWithText(iris.StatusNotFound, "no [%s] %s", publicID, t.Placeholder)
 		return
 	}
 	if err != nil {
@@ -180,17 +176,13 @@ type SimpleDeleteTemplate[ServiceRequest, ServiceReply any] struct {
 		Delete(context.Context, *ServiceRequest) (*ServiceReply, error)
 	}
 
-	ParseServiceRequest func(userID string, id int32) *ServiceRequest
+	ParseServiceRequest func(userID string, publicID string) *ServiceRequest
 	// ResourceNotFound returns true if the error is represented as resource not found error.
 	ResourceNotFound func(error) bool
 }
 
 func (t *SimpleDeleteTemplate[ServiceRequest, ServiceReply]) Delete(c iris.Context) {
-	id, err := c.Params().GetInt32(t.Placeholder)
-	if err != nil {
-		c.StopWithText(iris.StatusBadRequest, "missing or invalid %s", t.Placeholder)
-		return
-	}
+	publicID := c.Params().GetString(t.Placeholder)
 
 	user := c.User()
 	if user == nil {
@@ -204,11 +196,11 @@ func (t *SimpleDeleteTemplate[ServiceRequest, ServiceReply]) Delete(c iris.Conte
 		return
 	}
 
-	sr := t.ParseServiceRequest(userID, id)
+	sr := t.ParseServiceRequest(userID, publicID)
 
 	_, err = t.Service.Delete(c.Request().Context(), sr)
 	if t.ResourceNotFound(err) {
-		c.StopWithText(iris.StatusNotFound, "no [%d] %s", id, t.Placeholder)
+		c.StopWithText(iris.StatusNotFound, "no [%s] %s", publicID, t.Placeholder)
 		return
 	}
 	if err != nil {

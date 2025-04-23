@@ -45,8 +45,8 @@ type ListReply struct {
 }
 
 type UpdateRequest struct {
-	UserID     string
-	CategoryID int32
+	UserID           string
+	CategoryPublicID string
 
 	Category *BaseCategory
 }
@@ -56,8 +56,8 @@ type UpdateReply struct {
 }
 
 type DeleteRequest struct {
-	UserID     string
-	CategoryID int32
+	UserID           string
+	CategoryPublicID string
 }
 
 type DeleteReply struct{}

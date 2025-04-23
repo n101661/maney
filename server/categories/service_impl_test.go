@@ -16,6 +16,7 @@ func Test_service_Create(t *testing.T) {
 			type_  = repository.CategoryTypeExpense
 
 			id           = 1
+			publicID     = "publicID"
 			categoryName = "A"
 			iconID       = 11
 		)
@@ -29,16 +30,20 @@ func Test_service_Create(t *testing.T) {
 				Create(gomock.Any(), &repository.CreateCategoriesRequest{
 					UserID: userID,
 					Type:   type_,
-					Categories: []*repository.BaseCategory{
+					Categories: []*repository.BaseCreateCategory{
 						{
-							Name:   categoryName,
-							IconID: iconID,
+							PublicID: publicID,
+							BaseCategory: &repository.BaseCategory{
+								Name:   categoryName,
+								IconID: iconID,
+							},
 						},
 					},
 				}).
 				Return([]*repository.Category{
 					{
-						ID: id,
+						ID:       id,
+						PublicID: publicID,
 						BaseCategory: &repository.BaseCategory{
 							Name:   categoryName,
 							IconID: iconID,
@@ -47,7 +52,9 @@ func Test_service_Create(t *testing.T) {
 				}, nil),
 		)
 
-		s, err := NewService(repo)
+		s, err := NewService(repo, WithAccountServiceGenPublicID(func() string {
+			return publicID
+		}))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -64,7 +71,8 @@ func Test_service_Create(t *testing.T) {
 		assert.Equal(&CreateReply{
 			Type: type_,
 			Category: &Category{
-				ID: id,
+				ID:       id,
+				PublicID: publicID,
 				BaseCategory: &BaseCategory{
 					Name:   categoryName,
 					IconID: iconID,
@@ -81,10 +89,12 @@ func Test_service_List(t *testing.T) {
 			type_  = repository.CategoryTypeExpense
 
 			id0           = 1
+			publicID0     = "publicID0"
 			categoryName0 = "A"
 			iconID0       = 11
 
 			id1           = 2
+			publicID1     = "publicID1"
 			categoryName1 = "B"
 			iconID1       = 22
 		)
@@ -102,14 +112,16 @@ func Test_service_List(t *testing.T) {
 				Return(&repository.ListCategoriesReply{
 					Categories: []*repository.Category{
 						{
-							ID: id0,
+							ID:       id0,
+							PublicID: publicID0,
 							BaseCategory: &repository.BaseCategory{
 								Name:   categoryName0,
 								IconID: iconID0,
 							},
 						},
 						{
-							ID: id1,
+							ID:       id1,
+							PublicID: publicID1,
 							BaseCategory: &repository.BaseCategory{
 								Name:   categoryName1,
 								IconID: iconID1,
@@ -132,14 +144,16 @@ func Test_service_List(t *testing.T) {
 		assert.Equal(&ListReply{
 			Categories: []*Category{
 				{
-					ID: id0,
+					ID:       id0,
+					PublicID: publicID0,
 					BaseCategory: &BaseCategory{
 						Name:   categoryName0,
 						IconID: iconID0,
 					},
 				},
 				{
-					ID: id1,
+					ID:       id1,
+					PublicID: publicID1,
 					BaseCategory: &BaseCategory{
 						Name:   categoryName1,
 						IconID: iconID1,
@@ -180,6 +194,7 @@ func Test_service_Update(t *testing.T) {
 			type_  = repository.CategoryTypeExpense
 
 			id           = 1
+			publicID     = "publicID"
 			categoryName = "A"
 			iconID       = 11
 		)
@@ -191,15 +206,16 @@ func Test_service_Update(t *testing.T) {
 		gomock.InOrder(
 			repo.EXPECT().
 				Update(gomock.Any(), &repository.UpdateCategoryRequest{
-					UserID:     userID,
-					CategoryID: id,
+					UserID:           userID,
+					CategoryPublicID: publicID,
 					Category: &repository.BaseCategory{
 						Name:   categoryName,
 						IconID: iconID,
 					},
 				}).
 				Return(&repository.Category{
-					ID: id,
+					ID:       id,
+					PublicID: publicID,
 					BaseCategory: &repository.BaseCategory{
 						Name:   categoryName,
 						IconID: iconID,
@@ -213,8 +229,8 @@ func Test_service_Update(t *testing.T) {
 		}
 
 		reply, err := s.Update(context.Background(), &UpdateRequest{
-			UserID:     userID,
-			CategoryID: id,
+			UserID:           userID,
+			CategoryPublicID: publicID,
 			Category: &BaseCategory{
 				Name:   categoryName,
 				IconID: iconID,
@@ -223,7 +239,8 @@ func Test_service_Update(t *testing.T) {
 		assert.NoError(err)
 		assert.Equal(&UpdateReply{
 			Category: &Category{
-				ID: id,
+				ID:       id,
+				PublicID: publicID,
 				BaseCategory: &BaseCategory{
 					Name:   categoryName,
 					IconID: iconID,
@@ -246,8 +263,8 @@ func Test_service_Update(t *testing.T) {
 		}
 
 		reply, err := s.Update(context.Background(), &UpdateRequest{
-			UserID:     "user",
-			CategoryID: 0,
+			UserID:           "user",
+			CategoryPublicID: "0",
 			Category: &BaseCategory{
 				Name:   "name",
 				IconID: 0,
@@ -265,6 +282,7 @@ func Test_service_Delete(t *testing.T) {
 			type_  = repository.CategoryTypeExpense
 
 			id           = 1
+			publicID     = "publicID"
 			categoryName = "A"
 			iconID       = 11
 		)
@@ -276,8 +294,8 @@ func Test_service_Delete(t *testing.T) {
 		gomock.InOrder(
 			repo.EXPECT().
 				Delete(gomock.Any(), &repository.DeleteCategoriesRequest{
-					UserID:      userID,
-					CategoryIDs: []int32{id},
+					UserID:            userID,
+					CategoryPublicIDs: []string{publicID},
 				}).
 				Return([]*repository.Category{{
 					ID: id,
@@ -294,8 +312,8 @@ func Test_service_Delete(t *testing.T) {
 		}
 
 		reply, err := s.Delete(context.Background(), &DeleteRequest{
-			UserID:     userID,
-			CategoryID: id,
+			UserID:           userID,
+			CategoryPublicID: publicID,
 		})
 		assert.NoError(err)
 		assert.Equal(&DeleteReply{}, reply)
@@ -315,8 +333,8 @@ func Test_service_Delete(t *testing.T) {
 		}
 
 		reply, err := s.Delete(context.Background(), &DeleteRequest{
-			UserID:     "user",
-			CategoryID: 0,
+			UserID:           "user",
+			CategoryPublicID: "0",
 		})
 		assert.ErrorIs(err, ErrCategoryNotFound)
 		assert.Nil(reply)

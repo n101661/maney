@@ -27,11 +27,17 @@ type AccountRepository interface {
 
 type CreateAccountsRequest struct {
 	UserID   string
-	Accounts []*BaseAccount
+	Accounts []*BaseCreateAccount
+}
+
+type BaseCreateAccount struct {
+	PublicID string
+	*BaseAccount
 }
 
 type Account struct {
-	ID int32
+	ID       int32
+	PublicID string
 	*BaseAccount
 	Balance decimal.Decimal
 }
@@ -43,8 +49,8 @@ type BaseAccount struct {
 }
 
 type ListAccountsRequest struct {
-	UserID    string
-	AccountID *int32
+	UserID          string
+	AccountPublicID *string
 }
 
 type ListAccountsReply struct {
@@ -52,14 +58,14 @@ type ListAccountsReply struct {
 }
 
 type UpdateAccountRequest struct {
-	UserID    string
-	AccountID int32
+	UserID          string
+	AccountPublicID string
 
 	Account      *BaseAccount
 	BalanceDelta *decimal.Decimal
 }
 
 type DeleteAccountsRequest struct {
-	AccountIDs []int32
-	UserID     string
+	AccountPublicIDs []string
+	UserID           string
 }

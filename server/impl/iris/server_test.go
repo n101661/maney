@@ -59,7 +59,8 @@ func TestServer(t *testing.T) {
 	accountService := accounts.NewMockService(controller)
 	accountService.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&accounts.CreateReply{
 		Account: &accounts.Account{
-			ID: 0,
+			ID:       0,
+			PublicID: "PublicID",
 			BaseAccount: &accounts.BaseAccount{
 				Name:           "A",
 				IconID:         0,
@@ -70,7 +71,8 @@ func TestServer(t *testing.T) {
 	}, nil).AnyTimes()
 	accountService.EXPECT().List(gomock.Any(), gomock.Any()).Return(&accounts.ListReply{
 		Accounts: []*accounts.Account{{
-			ID: 0,
+			ID:       0,
+			PublicID: "PublicID",
 			BaseAccount: &accounts.BaseAccount{
 				Name:           "A",
 				IconID:         0,
@@ -81,7 +83,8 @@ func TestServer(t *testing.T) {
 	}, nil).AnyTimes()
 	accountService.EXPECT().Update(gomock.Any(), gomock.Any()).Return(&accounts.UpdateReply{
 		Account: &accounts.Account{
-			ID: 0,
+			ID:       0,
+			PublicID: "PublicID",
 			BaseAccount: &accounts.BaseAccount{
 				Name:           "A",
 				IconID:         0,
@@ -96,7 +99,8 @@ func TestServer(t *testing.T) {
 	categoryService.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&categories.CreateReply{
 		Type: 0,
 		Category: &categories.Category{
-			ID: 0,
+			ID:       0,
+			PublicID: "PublicID",
 			BaseCategory: &categories.BaseCategory{
 				Name:   "",
 				IconID: 0,
@@ -105,7 +109,8 @@ func TestServer(t *testing.T) {
 	}, nil).AnyTimes()
 	categoryService.EXPECT().List(gomock.Any(), gomock.Any()).Return(&categories.ListReply{
 		Categories: []*categories.Category{{
-			ID: 0,
+			ID:       0,
+			PublicID: "PublicID",
 			BaseCategory: &categories.BaseCategory{
 				Name:   "",
 				IconID: 0,
@@ -114,7 +119,8 @@ func TestServer(t *testing.T) {
 	}, nil).AnyTimes()
 	categoryService.EXPECT().Update(gomock.Any(), gomock.Any()).Return(&categories.UpdateReply{
 		Category: &categories.Category{
-			ID: 0,
+			ID:       0,
+			PublicID: "PublicID",
 			BaseCategory: &categories.BaseCategory{
 				Name:   "",
 				IconID: 0,
@@ -167,17 +173,17 @@ func TestServer(t *testing.T) {
 	withAuthorization(httpExpect.GET("/accounts")).
 		Expect().Status(httptest.StatusOK)
 
-	withAuthorization(httpExpect.PUT("/accounts/1")).WithJSON(models.BasicAccount{
+	withAuthorization(httpExpect.PUT("/accounts/PublicID")).WithJSON(models.BasicAccount{
 		Name:           "A",
 		IconId:         0,
 		InitialBalance: "0",
 	}).Expect().Status(httptest.StatusOK)
 
-	withAuthorization(httpExpect.DELETE("/accounts/1")).
+	withAuthorization(httpExpect.DELETE("/accounts/PublicID")).
 		Expect().Status(httptest.StatusOK)
 
 	withAuthorization(httpExpect.POST("/categories")).WithJSON(models.CreatingCategory{
-		IconId: lo.ToPtr(models.Id(0)),
+		IconId: lo.ToPtr(models.IconId(0)),
 		Name:   "A",
 		Type:   models.Expense,
 	}).Expect().Status(httptest.StatusOK)
@@ -185,12 +191,12 @@ func TestServer(t *testing.T) {
 	withAuthorization(httpExpect.GET("/categories")).
 		Expect().Status(httptest.StatusOK)
 
-	withAuthorization(httpExpect.PUT("/categories/1")).WithJSON(models.BasicCategory{
-		IconId: lo.ToPtr(models.Id(0)),
+	withAuthorization(httpExpect.PUT("/categories/PublicID")).WithJSON(models.BasicCategory{
+		IconId: lo.ToPtr(models.IconId(0)),
 		Name:   "A",
 	}).Expect().Status(httptest.StatusOK)
 
-	withAuthorization(httpExpect.DELETE("/categories/1")).
+	withAuthorization(httpExpect.DELETE("/categories/PublicID")).
 		Expect().Status(httptest.StatusOK)
 }
 

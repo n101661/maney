@@ -429,8 +429,9 @@ components:
         - compareItemsInDifferentShop
         - compareItemsInSameShop
     Id:
+      type: string
+    iconId:
       type: integer
-      example: 0
     ObjectId:
       type: object
       properties:
@@ -443,7 +444,7 @@ components:
           type: string
           description: account name
         iconId:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/iconId"
         initialBalance:
           $ref: "#/components/schemas/Decimal"
       required:
@@ -474,7 +475,7 @@ components:
         name:
           type: string
         iconId:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/iconId"
           description: icon id
       required:
         - type
@@ -485,7 +486,7 @@ components:
         name:
           type: string
         iconId:
-          $ref: "#/components/schemas/Id"
+          $ref: "#/components/schemas/iconId"
           description: icon id
       required:
         - name

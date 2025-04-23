@@ -5,27 +5,33 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/n101661/maney/pkg/utils"
+	"github.com/n101661/maney/pkg/utils/slugid"
 	"github.com/n101661/maney/server/repository"
 	"github.com/samber/lo"
 )
 
 type service struct {
 	repository repository.AccountRepository
+
+	opts *accountServiceOptions
 }
 
 func NewService(
 	repository repository.AccountRepository,
+	opts ...utils.Option[accountServiceOptions],
 ) (Service, error) {
 	return &service{
 		repository: repository,
+		opts:       utils.ApplyOptions(defaultAccountServiceOptions(), opts),
 	}, nil
 }
 
 func (s *service) Create(ctx context.Context, r *CreateRequest) (*CreateReply, error) {
 	rows, err := s.repository.Create(ctx, &repository.CreateAccountsRequest{
 		UserID: r.UserID,
-		Accounts: []*repository.BaseAccount{
-			parseBaseAccount(r.Account),
+		Accounts: []*repository.BaseCreateAccount{
+			parseBaseCreateAccount(r.Account, s.opts.genPublicID),
 		},
 	})
 	if err != nil {
@@ -63,8 +69,8 @@ func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, e
 	}
 
 	origin, err := s.repository.List(ctx, &repository.ListAccountsRequest{
-		UserID:    r.UserID,
-		AccountID: lo.ToPtr(r.AccountID),
+		UserID:          r.UserID,
+		AccountPublicID: lo.ToPtr(r.AccountPublicID),
 	})
 	if err != nil {
 		if errors.Is(err, repository.ErrDataNotFound) {
@@ -74,10 +80,10 @@ func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, e
 	}
 
 	row, err := s.repository.Update(ctx, &repository.UpdateAccountRequest{
-		UserID:       r.UserID,
-		AccountID:    r.AccountID,
-		Account:      parseBaseAccount(r.Account),
-		BalanceDelta: lo.ToPtr(r.Account.InitialBalance.Sub(origin.Accounts[0].InitialBalance)),
+		UserID:          r.UserID,
+		AccountPublicID: r.AccountPublicID,
+		Account:         parseBaseAccount(r.Account),
+		BalanceDelta:    lo.ToPtr(r.Account.InitialBalance.Sub(origin.Accounts[0].InitialBalance)),
 	})
 	if err != nil {
 		if errors.Is(err, repository.ErrDataNotFound) {
@@ -93,8 +99,8 @@ func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, e
 
 func (s *service) Delete(ctx context.Context, r *DeleteRequest) (*DeleteReply, error) {
 	_, err := s.repository.Delete(ctx, &repository.DeleteAccountsRequest{
-		AccountIDs: []int32{r.AccountID},
-		UserID:     r.UserID,
+		AccountPublicIDs: []string{r.AccountPublicID},
+		UserID:           r.UserID,
 	})
 	if err != nil {
 		if errors.Is(err, repository.ErrDataNotFound) {
@@ -107,7 +113,8 @@ func (s *service) Delete(ctx context.Context, r *DeleteRequest) (*DeleteReply, e
 
 func parseAccount(v *repository.Account) *Account {
 	return &Account{
-		ID: v.ID,
+		ID:       v.ID,
+		PublicID: v.PublicID,
 		BaseAccount: &BaseAccount{
 			Name:           v.Name,
 			IconID:         v.IconID,
@@ -125,5 +132,33 @@ func parseBaseAccount(v *BaseAccount) *repository.BaseAccount {
 		Name:           v.Name,
 		IconID:         v.IconID,
 		InitialBalance: v.InitialBalance,
+	}
+}
+
+func parseBaseCreateAccount(v *BaseAccount, genPublicID func() string) *repository.BaseCreateAccount {
+	if v == nil {
+		return nil
+	}
+	return &repository.BaseCreateAccount{
+		PublicID:    genPublicID(),
+		BaseAccount: parseBaseAccount(v),
+	}
+}
+
+type accountServiceOptions struct {
+	genPublicID func() string
+}
+
+func defaultAccountServiceOptions() *accountServiceOptions {
+	return &accountServiceOptions{
+		genPublicID: func() string {
+			return slugid.New("act", 11)
+		},
+	}
+}
+
+func WithAccountServiceGenPublicID(f func() string) utils.Option[accountServiceOptions] {
+	return func(o *accountServiceOptions) {
+		o.genPublicID = f
 	}
 }

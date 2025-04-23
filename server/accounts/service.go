@@ -29,7 +29,8 @@ type BaseAccount struct {
 }
 
 type Account struct {
-	ID int32
+	ID       int32
+	PublicID string
 	*BaseAccount
 	// Balance is the current balance.
 	Balance decimal.Decimal
@@ -53,9 +54,9 @@ type ListReply struct {
 }
 
 type UpdateRequest struct {
-	UserID    string
-	AccountID int32
-	Account   *BaseAccount
+	UserID          string
+	AccountPublicID string
+	Account         *BaseAccount
 }
 
 type UpdateReply struct {
@@ -63,8 +64,8 @@ type UpdateReply struct {
 }
 
 type DeleteRequest struct {
-	UserID    string
-	AccountID int32
+	UserID          string
+	AccountPublicID string
 }
 
 type DeleteReply struct{}

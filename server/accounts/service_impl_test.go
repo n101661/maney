@@ -18,6 +18,7 @@ func Test_service_Create(t *testing.T) {
 			userID      = "user-id"
 			accountName = "A"
 			iconID      = 11
+			publicID    = "publicID"
 
 			returnedAccountID = 9
 		)
@@ -33,17 +34,21 @@ func Test_service_Create(t *testing.T) {
 			mockRepo.EXPECT().
 				Create(gomock.Any(), &repository.CreateAccountsRequest{
 					UserID: userID,
-					Accounts: []*repository.BaseAccount{
+					Accounts: []*repository.BaseCreateAccount{
 						{
-							Name:           accountName,
-							IconID:         iconID,
-							InitialBalance: initBalance,
+							PublicID: publicID,
+							BaseAccount: &repository.BaseAccount{
+								Name:           accountName,
+								IconID:         iconID,
+								InitialBalance: initBalance,
+							},
 						},
 					},
 				}).
 				Return([]*repository.Account{
 					{
-						ID: returnedAccountID,
+						ID:       returnedAccountID,
+						PublicID: publicID,
 						BaseAccount: &repository.BaseAccount{
 							Name:           accountName,
 							IconID:         iconID,
@@ -54,7 +59,9 @@ func Test_service_Create(t *testing.T) {
 				}, nil),
 		)
 
-		s, err := NewService(mockRepo)
+		s, err := NewService(mockRepo, WithAccountServiceGenPublicID(func() string {
+			return publicID
+		}))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +77,8 @@ func Test_service_Create(t *testing.T) {
 		assert.NoError(err)
 		assert.Equal(&CreateReply{
 			Account: &Account{
-				ID: returnedAccountID,
+				ID:       returnedAccountID,
+				PublicID: publicID,
 				BaseAccount: &BaseAccount{
 					Name:           accountName,
 					IconID:         iconID,
@@ -88,10 +96,12 @@ func Test_service_List(t *testing.T) {
 			userID = "user-id"
 
 			accountID0   = 1
+			publicID0    = "publicID0"
 			accountName0 = "A"
 			iconID0      = 11
 
 			accountID1   = 2
+			publicID1    = "publicID1"
 			accountName1 = "B"
 			iconID1      = 22
 		)
@@ -115,7 +125,8 @@ func Test_service_List(t *testing.T) {
 				Return(&repository.ListAccountsReply{
 					Accounts: []*repository.Account{
 						{
-							ID: accountID0,
+							ID:       accountID0,
+							PublicID: publicID0,
 							BaseAccount: &repository.BaseAccount{
 								Name:           accountName0,
 								IconID:         iconID0,
@@ -124,7 +135,8 @@ func Test_service_List(t *testing.T) {
 							Balance: balance0,
 						},
 						{
-							ID: accountID1,
+							ID:       accountID1,
+							PublicID: publicID1,
 							BaseAccount: &repository.BaseAccount{
 								Name:           accountName1,
 								IconID:         iconID1,
@@ -148,7 +160,8 @@ func Test_service_List(t *testing.T) {
 		assert.Equal(&ListReply{
 			Accounts: []*Account{
 				{
-					ID: accountID0,
+					ID:       accountID0,
+					PublicID: publicID0,
 					BaseAccount: &BaseAccount{
 						Name:           accountName0,
 						IconID:         iconID0,
@@ -157,7 +170,8 @@ func Test_service_List(t *testing.T) {
 					Balance: balance0,
 				},
 				{
-					ID: accountID1,
+					ID:       accountID1,
+					PublicID: publicID1,
 					BaseAccount: &BaseAccount{
 						Name:           accountName1,
 						IconID:         iconID1,
@@ -197,6 +211,7 @@ func Test_service_Update(t *testing.T) {
 		const (
 			userID      = "user-id"
 			accountID   = 1
+			publicID    = "publicID"
 			accountName = "A"
 			iconID      = 11
 		)
@@ -215,12 +230,13 @@ func Test_service_Update(t *testing.T) {
 		gomock.InOrder(
 			mockRepo.EXPECT().
 				List(gomock.Any(), &repository.ListAccountsRequest{
-					UserID:    userID,
-					AccountID: lo.ToPtr[int32](accountID),
+					UserID:          userID,
+					AccountPublicID: lo.ToPtr(publicID),
 				}).
 				Return(&repository.ListAccountsReply{
 					Accounts: []*repository.Account{{
-						ID: accountID,
+						ID:       accountID,
+						PublicID: publicID,
 						BaseAccount: &repository.BaseAccount{
 							Name:           accountName,
 							IconID:         iconID,
@@ -231,8 +247,8 @@ func Test_service_Update(t *testing.T) {
 				}, nil),
 			mockRepo.EXPECT().
 				Update(gomock.Any(), &repository.UpdateAccountRequest{
-					UserID:    userID,
-					AccountID: accountID,
+					UserID:          userID,
+					AccountPublicID: publicID,
 					Account: &repository.BaseAccount{
 						Name:           accountName,
 						IconID:         iconID,
@@ -241,7 +257,8 @@ func Test_service_Update(t *testing.T) {
 					BalanceDelta: lo.ToPtr(newInitBalance.Sub(initBalance)),
 				}).
 				Return(&repository.Account{
-					ID: accountID,
+					ID:       accountID,
+					PublicID: publicID,
 					BaseAccount: &repository.BaseAccount{
 						Name:           accountName,
 						IconID:         iconID,
@@ -257,8 +274,8 @@ func Test_service_Update(t *testing.T) {
 		}
 
 		reply, err := s.Update(context.Background(), &UpdateRequest{
-			UserID:    userID,
-			AccountID: accountID,
+			UserID:          userID,
+			AccountPublicID: publicID,
 			Account: &BaseAccount{
 				Name:           accountName,
 				IconID:         iconID,
@@ -268,7 +285,8 @@ func Test_service_Update(t *testing.T) {
 		assert.NoError(err)
 		assert.Equal(&UpdateReply{
 			Account: &Account{
-				ID: accountID,
+				ID:       accountID,
+				PublicID: publicID,
 				BaseAccount: &BaseAccount{
 					Name:           accountName,
 					IconID:         iconID,
@@ -293,8 +311,8 @@ func Test_service_Update(t *testing.T) {
 		}
 
 		reply, err := s.Update(context.Background(), &UpdateRequest{
-			UserID:    "user-id",
-			AccountID: 1,
+			UserID:          "user-id",
+			AccountPublicID: "1",
 			Account: &BaseAccount{
 				Name:           "accountName",
 				IconID:         2,
@@ -309,9 +327,10 @@ func Test_service_Update(t *testing.T) {
 func Test_service_Delete(t *testing.T) {
 	t.Run("delete successful", func(t *testing.T) {
 		const (
-			userID    = "user-id"
-			accountID = 1
+			userID   = "user-id"
+			publicID = "publicID"
 
+			accountID   = 1
 			accountName = "A"
 			iconID      = 11
 		)
@@ -327,12 +346,13 @@ func Test_service_Delete(t *testing.T) {
 		gomock.InOrder(
 			mockRepo.EXPECT().
 				Delete(gomock.Any(), &repository.DeleteAccountsRequest{
-					UserID:     userID,
-					AccountIDs: []int32{accountID},
+					UserID:           userID,
+					AccountPublicIDs: []string{publicID},
 				}).
 				Return([]*repository.Account{
 					{
-						ID: accountID,
+						ID:       accountID,
+						PublicID: publicID,
 						BaseAccount: &repository.BaseAccount{
 							Name:           accountName,
 							IconID:         iconID,
@@ -349,8 +369,8 @@ func Test_service_Delete(t *testing.T) {
 		}
 
 		reply, err := s.Delete(context.Background(), &DeleteRequest{
-			UserID:    userID,
-			AccountID: accountID,
+			UserID:          userID,
+			AccountPublicID: publicID,
 		})
 		assert.NoError(err)
 		assert.Equal(&DeleteReply{}, reply)
@@ -370,8 +390,8 @@ func Test_service_Delete(t *testing.T) {
 		}
 
 		reply, err := s.Delete(context.Background(), &DeleteRequest{
-			UserID:    "userID",
-			AccountID: 1,
+			UserID:          "userID",
+			AccountPublicID: "1",
 		})
 		assert.ErrorIs(err, ErrAccountNotFound)
 		assert.Nil(reply)

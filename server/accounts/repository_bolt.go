@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	accountBucket = "account"
+	accountBucket      = "account"
+	publicIDToIDBucket = "publicIDToIDBucket"
 )
 
 type boltRepository struct {
@@ -48,6 +49,10 @@ func (s *boltRepository) init() error {
 			return fmt.Errorf("failed to create account bucket: %w", err)
 		}
 
+		if _, err := tx.CreateBucketIfNotExists([]byte(publicIDToIDBucket)); err != nil {
+			return fmt.Errorf("failed to create %s bucket: %w", publicIDToIDBucket, err)
+		}
+
 		return nil
 	})
 }
@@ -60,7 +65,15 @@ func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateAcco
 			return err
 		}
 
+		publicIDBucket := tx.Bucket([]byte(publicIDToIDBucket))
+
 		for i, account := range r.Accounts {
+			publicID := []byte(account.PublicID)
+
+			if id := publicIDBucket.Get(publicID); id != nil {
+				return repository.ErrDataExists
+			}
+
 			id, err := bolt.NextSequence[int32](bucket)
 			if err != nil {
 				return err
@@ -69,24 +82,29 @@ func (repo *boltRepository) Create(ctx context.Context, r *repository.CreateAcco
 			bid := types.Int32ToBytes(id)
 
 			if bucket.Get(bid) != nil {
-				return repository.ErrDataExists
+				return fmt.Errorf("duplicated next sequence[%d]", id)
 			}
 
 			data, err := repo.opts.MarshalValue(&boltAccountModel{
-				BaseAccount: account,
+				PublicID:    account.PublicID,
+				BaseAccount: account.BaseAccount,
 				Balance:     account.InitialBalance,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to marshal account: %w", err)
 			}
 
+			if err := publicIDBucket.Put(publicID, bid); err != nil {
+				return fmt.Errorf("failed to put data to %s bucket: %w", publicIDToIDBucket, err)
+			}
 			if err := bucket.Put(bid, data); err != nil {
 				return err
 			}
 
 			rows[i] = &repository.Account{
 				ID:          id,
-				BaseAccount: lo.ToPtr(*account),
+				PublicID:    account.PublicID,
+				BaseAccount: lo.ToPtr(*account.BaseAccount),
 				Balance:     account.InitialBalance,
 			}
 		}
@@ -110,11 +128,21 @@ func (repo *boltRepository) List(ctx context.Context, r *repository.ListAccounts
 			return nil
 		}
 
-		if r.AccountID != nil {
-			bid := types.Int32ToBytes(*r.AccountID)
+		if r.AccountPublicID != nil {
+			publicID := []byte(*r.AccountPublicID)
+
+			bid := tx.Bucket([]byte(publicIDToIDBucket)).Get(publicID)
+			if bid == nil {
+				return nil
+			}
 			data := bucket.Get(bid)
 
-			rows, err = addRow(rows, *r.AccountID, data, repo.opts.UnmarshalValue)
+			id, err := types.BytesToInt32(bid)
+			if err != nil {
+				return err
+			}
+
+			rows, err = addRow(rows, id, data, repo.opts.UnmarshalValue)
 			return err
 		}
 
@@ -152,6 +180,7 @@ func addRow(
 
 	rows = append(rows, &repository.Account{
 		ID:          id,
+		PublicID:    account.PublicID,
 		BaseAccount: account.BaseAccount,
 		Balance:     account.Balance,
 	})
@@ -167,11 +196,14 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateAcco
 			return err
 		}
 
-		bid := types.Int32ToBytes(r.AccountID)
+		bid := tx.Bucket([]byte(publicIDToIDBucket)).Get([]byte(r.AccountPublicID))
+		if bid == nil {
+			return repository.ErrDataNotFound
+		}
 
 		data := bucket.Get(bid)
 		if data == nil {
-			return repository.ErrDataNotFound
+			return fmt.Errorf("found in %s bucket but not found in %s bucket", publicIDToIDBucket, accountBucket)
 		}
 
 		var current boltAccountModel
@@ -195,8 +227,14 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateAcco
 			return fmt.Errorf("failed to update account: %v", err)
 		}
 
+		id, err := types.BytesToInt32(bid)
+		if err != nil {
+			return err
+		}
+
 		res = &repository.Account{
-			ID:          r.AccountID,
+			ID:          id,
+			PublicID:    r.AccountPublicID,
 			BaseAccount: current.BaseAccount,
 			Balance:     current.Balance,
 		}
@@ -210,21 +248,31 @@ func (repo *boltRepository) Update(ctx context.Context, r *repository.UpdateAcco
 }
 
 func (repo *boltRepository) Delete(ctx context.Context, r *repository.DeleteAccountsRequest) ([]*repository.Account, error) {
-	rows := make([]*repository.Account, len(r.AccountIDs))
+	rows := make([]*repository.Account, len(r.AccountPublicIDs))
 	err := repo.db.Update(func(tx *bbolt.Tx) error {
 		bucket, err := bolt.GetUserBucketOrCreate(tx, accountBucket, r.UserID)
 		if err != nil {
 			return err
 		}
 
-		for i, accountID := range r.AccountIDs {
-			bid := types.Int32ToBytes(accountID)
+		publicIDBucket := tx.Bucket([]byte(publicIDToIDBucket))
 
-			data := bucket.Get(bid)
-			if data == nil {
+		for i, publicID := range r.AccountPublicIDs {
+			bPublicID := []byte(publicID)
+
+			bid := publicIDBucket.Get(bPublicID)
+			if bid == nil {
 				return repository.ErrDataNotFound
 			}
 
+			data := bucket.Get(bid)
+			if data == nil {
+				return fmt.Errorf("found in %s bucket but not found in %s bucket", publicIDToIDBucket, accountBucket)
+			}
+
+			if err := publicIDBucket.Delete(bPublicID); err != nil {
+				return fmt.Errorf("failed to delete from %s bucket: %w", publicIDToIDBucket, err)
+			}
 			if err := bucket.Delete(bid); err != nil {
 				return fmt.Errorf("failed to delete account: %w", err)
 			}
@@ -234,8 +282,14 @@ func (repo *boltRepository) Delete(ctx context.Context, r *repository.DeleteAcco
 				return fmt.Errorf("failed to unmarshal data of account: %w", err)
 			}
 
+			id, err := types.BytesToInt32(bid)
+			if err != nil {
+				return err
+			}
+
 			rows[i] = &repository.Account{
-				ID:          accountID,
+				ID:          id,
+				PublicID:    publicID,
 				BaseAccount: account.BaseAccount,
 				Balance:     account.Balance,
 			}
@@ -254,6 +308,7 @@ func (repo *boltRepository) Close() error {
 }
 
 type boltAccountModel struct {
+	PublicID string
 	*repository.BaseAccount
 	Balance decimal.Decimal
 }
