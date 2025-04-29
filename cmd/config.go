@@ -5,16 +5,18 @@ import (
 	"os"
 	"time"
 
+	toml "github.com/pelletier/go-toml/v2"
+
 	"github.com/n101661/maney/pkg/encoding"
 	"github.com/n101661/maney/server/impl/iris"
 	"github.com/n101661/maney/server/impl/iris/config"
-	toml "github.com/pelletier/go-toml/v2"
+	"github.com/n101661/maney/server/repository/postgres"
 )
 
 type Config struct {
 	App     *AppConfig         `toml:"application"`
 	Auth    *AuthServiceConfig `toml:"authentication-service"`
-	Storage *StorageConfig     `toml:"storage"`
+	Storage *StorageConfig     `toml:"storage" comment:"Choose one of storage config as prefer storage. If you provide multiple settings, the system uses them in priority order: 'storage.postgres'."`
 }
 
 type AppConfig struct {
@@ -33,7 +35,7 @@ type AuthServiceConfig struct {
 }
 
 type StorageConfig struct {
-	BoltDBDir string `toml:"bolt-db-dir" comment:"Directory storing the BoltDB file."`
+	Postgres *postgres.Config `toml:"postgres" comment:"Connection settings of postgres."`
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -69,7 +71,18 @@ func CreateDefaultConfig(path string) (err error) {
 			AccessTokenExpireAfter:  encoding.Duration(10 * time.Minute),
 		},
 		Storage: &StorageConfig{
-			BoltDBDir: "./db",
+			Postgres: &postgres.Config{
+				Host:            "",
+				Port:            0,
+				Database:        "",
+				User:            "",
+				Password:        "",
+				Schema:          "",
+				ConnMaxIdleTime: 30 * time.Minute,
+				ConnMaxLifetime: time.Hour,
+				MaxIdleConns:    2,
+				MaxOpenConns:    2,
+			},
 		},
 	}
 

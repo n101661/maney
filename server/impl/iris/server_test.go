@@ -24,7 +24,6 @@ func TestServer(t *testing.T) {
 			ID: "access-token",
 			Claims: &users.TokenClaims{
 				UserID: "user-id",
-				Nonce:  0,
 			},
 			ExpireAfter: time.Hour,
 		}
@@ -32,7 +31,6 @@ func TestServer(t *testing.T) {
 			ID: "refresh-token",
 			Claims: &users.TokenClaims{
 				UserID: "user-id",
-				Nonce:  0,
 			},
 			ExpireAfter: time.Hour,
 		}

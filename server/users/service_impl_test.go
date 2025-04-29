@@ -102,14 +102,14 @@ func Test_service_Logout(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(&repository.TokenModel{
+			mockRepo.EXPECT().GetToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
 				ID: tokenID,
 				Claim: &TokenClaims{
 					UserID: "user-id",
-					Nonce:  0,
 				},
 				ExpiryTime: time.Now().Add(time.Hour),
 			}, nil),
+			mockRepo.EXPECT().RevokeToken(gomock.Any(), tokenID).Return(nil),
 		)
 
 		s, err := newService(mockRepo)
@@ -129,7 +129,7 @@ func Test_service_Logout(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
+			mockRepo.EXPECT().GetToken(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
 		)
 
 		s, err := newService(mockRepo)
@@ -141,7 +141,7 @@ func Test_service_Logout(t *testing.T) {
 			RefreshTokenID: "refresh-token-id",
 		})
 		assert.ErrorIs(err, ErrInvalidToken)
-		assert.Equal(&LogoutReply{}, reply)
+		assert.Nil(reply)
 	})
 	t.Run("token is expired", func(t *testing.T) {
 		assert := assert.New(t)
@@ -149,11 +149,10 @@ func Test_service_Logout(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(&repository.TokenModel{
+			mockRepo.EXPECT().GetToken(gomock.Any(), gomock.Any()).Return(&repository.TokenModel{
 				ID: "token",
 				Claim: &TokenClaims{
 					UserID: "user-id",
-					Nonce:  0,
 				},
 				ExpiryTime: time.Now().Add(-time.Hour),
 			}, nil),
@@ -168,7 +167,34 @@ func Test_service_Logout(t *testing.T) {
 			RefreshTokenID: "refresh-token-id",
 		})
 		assert.ErrorIs(err, ErrTokenExpired)
-		assert.Equal(&LogoutReply{}, reply)
+		assert.Nil(reply)
+	})
+	t.Run("token is revoked", func(t *testing.T) {
+		assert := assert.New(t)
+
+		controller := gomock.NewController(t)
+		mockRepo := repository.NewMockUserRepository(controller)
+		gomock.InOrder(
+			mockRepo.EXPECT().GetToken(gomock.Any(), gomock.Any()).Return(&repository.TokenModel{
+				ID: "token",
+				Claim: &TokenClaims{
+					UserID: "user-id",
+				},
+				ExpiryTime: time.Now().Add(time.Hour),
+				RevokedAt:  lo.ToPtr(time.Now().Add(-time.Hour)),
+			}, nil),
+		)
+
+		s, err := newService(mockRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reply, err := s.Logout(context.Background(), &LogoutRequest{
+			RefreshTokenID: "refresh-token-id",
+		})
+		assert.ErrorIs(err, ErrInvalidToken)
+		assert.Nil(reply)
 	})
 }
 
@@ -326,14 +352,14 @@ func Test_service_RefreshAccessToken(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
+			mockRepo.EXPECT().GetToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
 				ID: tokenID,
 				Claim: &repository.TokenClaims{
 					UserID: userID,
-					Nonce:  0,
 				},
 				ExpiryTime: time.Now().Add(time.Hour),
 			}, nil),
+			mockRepo.EXPECT().RevokeToken(gomock.Any(), tokenID).Return(nil),
 			mockRepo.EXPECT().CreateToken(gomock.Any(), gomock.Any()).Return(nil),
 		)
 
@@ -354,7 +380,7 @@ func Test_service_RefreshAccessToken(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
+			mockRepo.EXPECT().GetToken(gomock.Any(), gomock.Any()).Return(nil, repository.ErrDataNotFound),
 		)
 
 		s, err := newService(mockRepo)
@@ -378,11 +404,10 @@ func Test_service_RefreshAccessToken(t *testing.T) {
 		controller := gomock.NewController(t)
 		mockRepo := repository.NewMockUserRepository(controller)
 		gomock.InOrder(
-			mockRepo.EXPECT().DeleteToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
+			mockRepo.EXPECT().GetToken(gomock.Any(), tokenID).Return(&repository.TokenModel{
 				ID: tokenID,
 				Claim: &repository.TokenClaims{
 					UserID: "user-id",
-					Nonce:  0,
 				},
 				ExpiryTime: time.Now().Add(-time.Hour),
 			}, nil),

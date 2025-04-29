@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"io"
 	"strconv"
 
 	"github.com/samber/lo"
@@ -23,8 +22,6 @@ type CategoryRepository interface {
 	// Delete returns error:
 	//  - ErrDataNotFound if the account does not exist.
 	Delete(context.Context, *DeleteCategoriesRequest) ([]*Category, error)
-
-	io.Closer
 }
 
 type CreateCategoriesRequest struct {
@@ -60,7 +57,8 @@ type DeleteCategoriesRequest struct {
 }
 
 const (
-	CategoryTypeExpense CategoryType = iota
+	CategoryTypeNone CategoryType = iota
+	CategoryTypeExpense
 	CategoryTypeIncome
 )
 

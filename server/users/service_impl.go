@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -55,7 +56,6 @@ func (s *service) Login(ctx context.Context, r *LoginRequest) (*LoginReply, erro
 
 	accessToken, err := s.generateAccessToken(&TokenClaims{
 		UserID: r.UserID,
-		Nonce:  s.opts.getNonce(),
 	})
 	if err != nil {
 		return nil, err
@@ -63,7 +63,6 @@ func (s *service) Login(ctx context.Context, r *LoginRequest) (*LoginReply, erro
 
 	refreshToken, err := s.generateRefreshToken(ctx, &TokenClaims{
 		UserID: r.UserID,
-		Nonce:  s.opts.getNonce(),
 	})
 	if err != nil {
 		return nil, err
@@ -140,8 +139,16 @@ func (s *service) generateRefreshToken(ctx context.Context, claim *TokenClaims) 
 	}, nil
 }
 
+type refreshTokenClaims struct {
+	*TokenClaims
+	Seed uint64
+}
+
 func generateRefreshToken(claim *TokenClaims, signingKey []byte) (string, error) {
-	payload, err := json.Marshal(claim)
+	payload, err := json.Marshal(refreshTokenClaims{
+		TokenClaims: claim,
+		Seed:        rand.Uint64(),
+	})
 	if err != nil {
 		return "", err
 	}
@@ -161,19 +168,31 @@ func generateRefreshToken(claim *TokenClaims, signingKey []byte) (string, error)
 
 func (s *service) Logout(ctx context.Context, r *LogoutRequest) (*LogoutReply, error) {
 	_, err := s.revokeRefreshToken(ctx, r.RefreshTokenID)
-	return &LogoutReply{}, err
+	if err != nil {
+		return nil, err
+	}
+	return &LogoutReply{}, nil
 }
 
 func (s *service) revokeRefreshToken(ctx context.Context, tokenID string) (*repository.TokenModel, error) {
-	token, err := s.repository.DeleteToken(ctx, tokenID)
+	token, err := s.repository.GetToken(ctx, tokenID)
 	if err != nil {
 		if errors.Is(err, repository.ErrDataNotFound) {
 			return nil, ErrInvalidToken
 		}
 		return nil, err
 	}
-	if time.Now().After(token.ExpiryTime) {
+
+	now := time.Now()
+	if now.After(token.ExpiryTime) {
 		return nil, ErrTokenExpired
+	}
+	if token.RevokedAt != nil && now.After(*token.RevokedAt) {
+		return nil, ErrInvalidToken
+	}
+
+	if err := s.repository.RevokeToken(ctx, tokenID); err != nil {
+		return nil, err
 	}
 	return token, nil
 }
@@ -229,7 +248,6 @@ func (s *service) RefreshAccessToken(ctx context.Context, r *RefreshAccessTokenR
 
 	accessToken, err := s.generateAccessToken(&TokenClaims{
 		UserID: token.Claim.UserID,
-		Nonce:  s.opts.getNonce(),
 	})
 	if err != nil {
 		return nil, err
@@ -237,7 +255,6 @@ func (s *service) RefreshAccessToken(ctx context.Context, r *RefreshAccessTokenR
 
 	refreshToken, err := s.generateRefreshToken(ctx, &TokenClaims{
 		UserID: token.Claim.UserID,
-		Nonce:  s.opts.getNonce(),
 	})
 	if err != nil {
 		return nil, err

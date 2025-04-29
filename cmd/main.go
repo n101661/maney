@@ -24,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	repos, err := newBoltRepositories(config.Storage.BoltDBDir)
+	repos, err := newRepository(config.Storage)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

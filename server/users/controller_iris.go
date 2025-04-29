@@ -76,18 +76,15 @@ func (controller *IrisController) Login(c iris.Context) {
 }
 
 func (controller *IrisController) Logout(c iris.Context) {
-	cookie, err := c.Request().Cookie(CookieRefreshToken)
-	if err != nil {
-		if errors.Is(err, http.ErrNoCookie) {
-			c.StatusCode(iris.StatusOK)
-			return
-		}
-		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
+	token := c.GetCookie(CookieRefreshToken)
+	token = strings.TrimSpace(token)
+	if token == "" {
+		c.StatusCode(iris.StatusOK)
 		return
 	}
 
-	_, err = controller.s.Logout(c.Request().Context(), &LogoutRequest{
-		RefreshTokenID: cookie.Value,
+	_, err := controller.s.Logout(c.Request().Context(), &LogoutRequest{
+		RefreshTokenID: token,
 	})
 	if err != nil {
 		if !(errors.Is(err, ErrInvalidToken) || errors.Is(err, ErrTokenExpired)) {
@@ -96,12 +93,12 @@ func (controller *IrisController) Logout(c iris.Context) {
 		}
 
 		if controller.opts.logger != nil {
-			controller.opts.logger.Warnf("receive unexpected token[%s] when revoking: %v", cookie.Value, err)
+			controller.opts.logger.Warnf("receive unexpected token[%s] when revoking: %v", token, err)
 		}
 	}
 
 	c.SetCookieKV(
-		CookieRefreshToken, cookie.Value,
+		CookieRefreshToken, token,
 		iris.CookiePath(cookiePathRefreshToken),
 		iris.CookieExpires(0),
 		iris.CookieHTTPOnly(true),
