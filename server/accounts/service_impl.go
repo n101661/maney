@@ -9,6 +9,7 @@ import (
 	"github.com/n101661/maney/pkg/utils/slugid"
 	"github.com/n101661/maney/server/repository"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 )
 
 type service struct {
@@ -79,11 +80,15 @@ func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, e
 		return nil, err
 	}
 
+	balanceDelta := r.Account.InitialBalance.Sub(origin.Accounts[0].InitialBalance)
+
 	row, err := s.repository.Update(ctx, &repository.UpdateAccountRequest{
 		UserID:          r.UserID,
 		AccountPublicID: r.AccountPublicID,
 		Account:         parseBaseAccount(r.Account),
-		BalanceDelta:    lo.ToPtr(r.Account.InitialBalance.Sub(origin.Accounts[0].InitialBalance)),
+		BalanceDelta: lo.IfF(!balanceDelta.IsZero(), func() *decimal.Decimal {
+			return lo.ToPtr(balanceDelta)
+		}).Else(nil),
 	})
 	if err != nil {
 		if errors.Is(err, repository.ErrDataNotFound) {
