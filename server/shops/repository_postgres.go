@@ -80,8 +80,11 @@ func (repo *postgresRepository) Update(ctx context.Context, r *repository.Update
 		return nil, repository.ErrDataNotFound
 	}
 
+	cols := []string{}
 	bean := postgres.ShopsModel{}
 	if r.Shop != nil {
+		cols = append(cols, "name", "address")
+
 		row.Name = r.Shop.Name
 		bean.Name = row.Name
 
@@ -89,7 +92,7 @@ func (repo *postgresRepository) Update(ctx context.Context, r *repository.Update
 		bean.Address = row.Address
 	}
 
-	affected, err := session.Update(&bean, &postgres.ShopsModel{
+	affected, err := session.Cols(cols...).Update(&bean, &postgres.ShopsModel{
 		ID: row.ID,
 	})
 	if err != nil {
