@@ -26,10 +26,10 @@ func (s *Server) registerRoutes() {
 		user.Delete("/categories/{categoryId}", s.controllers.Category.Delete)
 	}
 	{ // user's shops
-		user.Post("/shops")
-		user.Get("/shops")
-		user.Put("/shops/{shopId}")
-		user.Delete("/shops/{shopId}")
+		user.Post("/shops", s.controllers.Shop.Create)
+		user.Get("/shops", s.controllers.Shop.List)
+		user.Put("/shops/{shopId}", s.controllers.Shop.Update)
+		user.Delete("/shops/{shopId}", s.controllers.Shop.Delete)
 	}
 	{ // user's fees
 		user.Post("/fees")

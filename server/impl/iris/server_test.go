@@ -15,6 +15,7 @@ import (
 	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/categories"
 	"github.com/n101661/maney/server/models"
+	"github.com/n101661/maney/server/shops"
 	"github.com/n101661/maney/server/users"
 )
 
@@ -127,10 +128,35 @@ func TestServer(t *testing.T) {
 	}, nil).AnyTimes()
 	categoryService.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(&categories.DeleteReply{}, nil).AnyTimes()
 
+	shopService := shops.NewMockService(controller)
+	shopService.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&shops.CreateReply{
+		Shop: &shops.Shop{
+			ID:       0,
+			PublicID: "PublicID",
+			BaseShop: &shops.BaseShop{},
+		},
+	}, nil).AnyTimes()
+	shopService.EXPECT().List(gomock.Any(), gomock.Any()).Return(&shops.ListReply{
+		Shops: []*shops.Shop{{
+			ID:       0,
+			PublicID: "PublicID",
+			BaseShop: &shops.BaseShop{},
+		}},
+	}, nil).AnyTimes()
+	shopService.EXPECT().Update(gomock.Any(), gomock.Any()).Return(&shops.UpdateReply{
+		Shop: &shops.Shop{
+			ID:       0,
+			PublicID: "PublicID",
+			BaseShop: &shops.BaseShop{},
+		},
+	}, nil).AnyTimes()
+	shopService.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(&shops.DeleteReply{}, nil).AnyTimes()
+
 	httpExpect := httptest.New(t, NewServer(&Config{}, &Controllers{
 		User:     users.NewIrisController(userService),
 		Account:  accounts.NewIrisController(accountService),
 		Category: categories.NewIrisController(categoryService),
+		Shop:     shops.NewIrisController(shopService),
 	}).app)
 
 	loginResponse := httpExpect.POST("/login").WithJSON(models.LoginRequest{
@@ -195,6 +221,20 @@ func TestServer(t *testing.T) {
 	}).Expect().Status(httptest.StatusOK)
 
 	withAuthorization(httpExpect.DELETE("/categories/PublicID")).
+		Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.POST("/shops")).WithJSON(models.CreateShopJSONRequestBody{
+		Name: "A",
+	}).Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.GET("/shops")).
+		Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.PUT("/shops/PublicID")).WithJSON(models.BasicShop{
+		Name: "A",
+	}).Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.DELETE("/shops/PublicID")).
 		Expect().Status(httptest.StatusOK)
 }
 

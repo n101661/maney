@@ -14,6 +14,7 @@ import (
 	"github.com/n101661/maney/server/middleware/errors"
 	"github.com/n101661/maney/server/middleware/logger"
 	"github.com/n101661/maney/server/middleware/recover"
+	"github.com/n101661/maney/server/shops"
 	"github.com/n101661/maney/server/users"
 )
 
@@ -26,6 +27,7 @@ type Controllers struct {
 	User     *users.IrisController
 	Account  *accounts.IrisController
 	Category *categories.IrisController
+	Shop     *shops.IrisController
 }
 
 type Server struct {

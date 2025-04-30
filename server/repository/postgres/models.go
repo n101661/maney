@@ -92,3 +92,15 @@ func (v *BaseCategory) MarshalJSON() ([]byte, error) {
 func (v *BaseCategory) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &v.BaseCategory)
 }
+
+type ShopsModel struct {
+	ID       int32  `xorm:"serial pk"`
+	PublicID string `xorm:"unique not null"`
+	UserID   string `xorm:"index not null"`
+	Name     string `xorm:"text not null"`
+	Address  string `xorm:"text not null"`
+}
+
+func (*ShopsModel) TableName() string {
+	return "shops"
+}
