@@ -90,7 +90,7 @@ func (s *service) validateUser(ctx context.Context, id, password string) error {
 }
 
 func validatePassword(expected []byte, actual string) error {
-	return bcrypt.CompareHashAndPassword(expected, encrypt([]byte(actual)))
+	return bcrypt.CompareHashAndPassword(expected, hashValue([]byte(actual)))
 }
 
 type accessTokenClaims struct {
@@ -125,7 +125,7 @@ func (s *service) generateRefreshToken(ctx context.Context, claim *TokenClaims) 
 	}
 
 	err = s.repository.CreateToken(ctx, &repository.TokenModel{
-		ID:         tokenID,
+		ID:         hashRefreshToken(tokenID),
 		Claim:      claim,
 		ExpiryTime: time.Now().Add(s.opts.refreshTokenExpireAfter),
 	})
@@ -167,7 +167,7 @@ func generateRefreshToken(claim *TokenClaims, signingKey []byte) (string, error)
 }
 
 func (s *service) Logout(ctx context.Context, r *LogoutRequest) (*LogoutReply, error) {
-	_, err := s.revokeRefreshToken(ctx, r.RefreshTokenID)
+	_, err := s.revokeRefreshToken(ctx, hashRefreshToken(r.RefreshTokenID))
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (s *service) SignUp(ctx context.Context, r *SignUpRequest) (*SignUpReply, e
 }
 
 func encryptPassword(pwd string, saltRound int) ([]byte, error) {
-	encrypted := encrypt([]byte(pwd))
+	encrypted := hashValue([]byte(pwd))
 	return bcrypt.GenerateFromPassword(encrypted, saltRound)
 }
 
@@ -241,7 +241,7 @@ func (s *service) ValidateAccessToken(ctx context.Context, r *ValidateAccessToke
 }
 
 func (s *service) RefreshAccessToken(ctx context.Context, r *RefreshAccessTokenRequest) (*RefreshAccessTokenReply, error) {
-	token, err := s.revokeRefreshToken(ctx, r.TokenID)
+	token, err := s.revokeRefreshToken(ctx, hashRefreshToken(r.TokenID))
 	if err != nil {
 		return nil, err
 	}
@@ -343,8 +343,12 @@ func WithNonceGenerator(f func() int) utils.Option[serviceOptions] {
 	}
 }
 
-func encrypt(val []byte) []byte {
+func hashValue(val []byte) []byte {
 	h := sha512.New()
 	h.Write(val)
 	return h.Sum(nil)
+}
+
+func hashRefreshToken(token string) string {
+	return base64.StdEncoding.EncodeToString(hashValue([]byte(token)))
 }

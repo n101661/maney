@@ -34,7 +34,7 @@ func (v *UserConfig) UnmarshalJSON(data []byte) error {
 }
 
 type TokensModel struct {
-	ID         string       `xorm:"pk"`
+	ID         string       `xorm:"char(88) pk"`
 	UserID     string       `xorm:"index not null"`
 	ExpiryTime time.Time    `xorm:"not null"`
 	CreatedAt  time.Time    `xorm:"created not null"`
@@ -46,10 +46,10 @@ func (*TokensModel) TableName() string {
 }
 
 type AccountsModel struct {
-	ID       int32           `xorm:"serial pk"`
-	PublicID string          `xorm:"unique not null"`
-	UserID   string          `xorm:"index not null"`
-	Data     *BaseAccount    `xorm:"json not null"`
+	ID       int32               `xorm:"serial pk"`
+	PublicID string              `xorm:"unique not null"`
+	UserID   string              `xorm:"index not null"`
+	Data     *BaseAccount        `xorm:"json not null"`
 	Balance  decimal.NullDecimal `xorm:"numeric(15,6) not null"`
 }
 
