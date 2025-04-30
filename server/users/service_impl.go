@@ -84,13 +84,17 @@ func (s *service) validateUser(ctx context.Context, id, password string) error {
 	}
 
 	if err = validatePassword(user.Password, password); err != nil {
-		return ErrUserNotFoundOrInvalidPassword
+		return err
 	}
 	return nil
 }
 
 func validatePassword(expected []byte, actual string) error {
-	return bcrypt.CompareHashAndPassword(expected, hashValue([]byte(actual)))
+	err := bcrypt.CompareHashAndPassword(expected, hashValue([]byte(actual)))
+	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+		return ErrUserNotFoundOrInvalidPassword
+	}
+	return err
 }
 
 type accessTokenClaims struct {
