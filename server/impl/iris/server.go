@@ -20,10 +20,6 @@ import (
 type Config struct {
 	LogLevel    config.LogLevel `toml:"log-level" comment:"Log level. It can be one of the following: debug, info, warn, error, fatal, disable. The default is info."`
 	CorsOrigins []string        `toml:"cors-origin"`
-
-	// SecretKey is for JWS.
-	SecretKey         []byte `toml:"-"`
-	PasswordSaltRound int    `toml:"-"`
 }
 
 type Controllers struct {
