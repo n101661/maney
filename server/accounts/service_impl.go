@@ -29,6 +29,13 @@ func NewService(
 }
 
 func (s *service) Create(ctx context.Context, r *CreateRequest) (*CreateReply, error) {
+	if r.UserID == "" {
+		return nil, fmt.Errorf("%w: missing user id", ErrDataInsufficient)
+	}
+	if r.Account == nil {
+		return nil, fmt.Errorf("%w: missing account", ErrDataInsufficient)
+	}
+
 	rows, err := s.repository.Create(ctx, &repository.CreateAccountsRequest{
 		UserID: r.UserID,
 		Accounts: []*repository.BaseCreateAccount{
@@ -45,6 +52,10 @@ func (s *service) Create(ctx context.Context, r *CreateRequest) (*CreateReply, e
 }
 
 func (s *service) List(ctx context.Context, r *ListRequest) (*ListReply, error) {
+	if r.UserID == "" {
+		return nil, fmt.Errorf("%w: missing user id", ErrDataInsufficient)
+	}
+
 	reply, err := s.repository.List(ctx, &repository.ListAccountsRequest{
 		UserID: r.UserID,
 	})
@@ -65,8 +76,14 @@ func (s *service) List(ctx context.Context, r *ListRequest) (*ListReply, error) 
 }
 
 func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, error) {
+	if r.UserID == "" {
+		return nil, fmt.Errorf("%w: missing user id", ErrDataInsufficient)
+	}
+	if r.AccountPublicID == "" {
+		return nil, fmt.Errorf("%w: missing public id", ErrDataInsufficient)
+	}
 	if r.Account == nil {
-		return nil, fmt.Errorf("nothing to update")
+		return nil, fmt.Errorf("%w: missing account", ErrDataInsufficient)
 	}
 
 	origin, err := s.repository.List(ctx, &repository.ListAccountsRequest{
@@ -103,6 +120,13 @@ func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, e
 }
 
 func (s *service) Delete(ctx context.Context, r *DeleteRequest) (*DeleteReply, error) {
+	if r.UserID == "" {
+		return nil, fmt.Errorf("%w: missing user id", ErrDataInsufficient)
+	}
+	if r.AccountPublicID == "" {
+		return nil, fmt.Errorf("%w: missing public id", ErrDataInsufficient)
+	}
+
 	_, err := s.repository.Delete(ctx, &repository.DeleteAccountsRequest{
 		AccountPublicIDs: []string{r.AccountPublicID},
 		UserID:           r.UserID,

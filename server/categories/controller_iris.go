@@ -38,6 +38,13 @@ func NewIrisController(s Service) *IrisController {
 					},
 				}, nil
 			},
+			BadRequest: func(err error) (httpCode int, yes bool) {
+				switch {
+				case errors.Is(err, ErrDataInsufficient):
+					return iris.StatusBadRequest, true
+				}
+				return 0, false
+			},
 			ParseAPIResponse: func(reply *CreateReply) (*models.ObjectId, error) {
 				return &models.ObjectId{
 					Id: lo.ToPtr(models.Id(reply.Category.PublicID)),
@@ -55,6 +62,13 @@ func NewIrisController(s Service) *IrisController {
 					UserID: userID,
 					Type:   type_,
 				}, nil
+			},
+			BadRequest: func(err error) (httpCode int, yes bool) {
+				switch {
+				case errors.Is(err, ErrDataInsufficient):
+					return iris.StatusBadRequest, true
+				}
+				return 0, false
 			},
 			ParseAPIResponse: func(reply *ListReply) (*[]*models.Category, error) {
 				return lo.ToPtr(lo.Map(reply.Categories, func(item *Category, _ int) *models.Category {
@@ -79,8 +93,14 @@ func NewIrisController(s Service) *IrisController {
 					},
 				}, nil
 			},
-			ResourceNotFound: func(err error) bool {
-				return errors.Is(err, ErrCategoryNotFound)
+			BadRequest: func(err error) (httpCode int, yes bool) {
+				switch {
+				case errors.Is(err, ErrCategoryNotFound):
+					return iris.StatusNotFound, true
+				case errors.Is(err, ErrDataInsufficient):
+					return iris.StatusBadRequest, true
+				}
+				return 0, false
 			},
 		},
 		SimpleDeleteTemplate: &irisController.SimpleDeleteTemplate[DeleteRequest, DeleteReply]{
@@ -92,8 +112,14 @@ func NewIrisController(s Service) *IrisController {
 					CategoryPublicID: publicID,
 				}
 			},
-			ResourceNotFound: func(err error) bool {
-				return errors.Is(err, ErrCategoryNotFound)
+			BadRequest: func(err error) (httpCode int, yes bool) {
+				switch {
+				case errors.Is(err, ErrCategoryNotFound):
+					return iris.StatusNotFound, true
+				case errors.Is(err, ErrDataInsufficient):
+					return iris.StatusBadRequest, true
+				}
+				return 0, false
 			},
 		},
 	}

@@ -16,7 +16,9 @@ type SimpleCreateTemplate[RequestBody, ServiceRequest, ServiceReply, ResponseBod
 	// ParseServiceRequest the returned error is considered as user bad request and write 400 status code.
 	// If you want to write 500 status code, wrap the error by InternalError function.
 	ParseServiceRequest func(userID string, r *RequestBody) (*ServiceRequest, error)
-	ParseAPIResponse    func(*ServiceReply) (*ResponseBody, error)
+	// BadRequest checks if the error returned from Service is http bad request or not.
+	BadRequest       func(err error) (httpCode int, yes bool)
+	ParseAPIResponse func(*ServiceReply) (*ResponseBody, error)
 }
 
 func (t *SimpleCreateTemplate[RequestBody, ServiceRequest, ServiceReply, ResponseBody]) Create(c iris.Context) {
@@ -50,6 +52,10 @@ func (t *SimpleCreateTemplate[RequestBody, ServiceRequest, ServiceReply, Respons
 
 	reply, err := t.Service.Create(c.Request().Context(), sr)
 	if err != nil {
+		if code, y := t.BadRequest(err); y {
+			c.StopWithPlainError(code, err)
+			return
+		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
@@ -71,7 +77,9 @@ type SimpleListTemplate[ServiceRequest, ServiceReply, ResponseBody any] struct {
 	// ParseServiceRequest the returned error is considered as user bad request and write 400 status code.
 	// If you want to write 500 status code, wrap the error by InternalError function.
 	ParseServiceRequest func(c iris.Context, userID string) (*ServiceRequest, error)
-	ParseAPIResponse    func(*ServiceReply) (*ResponseBody, error)
+	// BadRequest checks if the error returned from Service is http bad request or not.
+	BadRequest       func(err error) (httpCode int, yes bool)
+	ParseAPIResponse func(*ServiceReply) (*ResponseBody, error)
 }
 
 func (t *SimpleListTemplate[ServiceRequest, ServiceReply, ResponseBody]) List(c iris.Context) {
@@ -98,6 +106,10 @@ func (t *SimpleListTemplate[ServiceRequest, ServiceReply, ResponseBody]) List(c 
 
 	reply, err := t.Service.List(c.Request().Context(), sr)
 	if err != nil {
+		if code, y := t.BadRequest(err); y {
+			c.StopWithPlainError(code, err)
+			return
+		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
@@ -121,8 +133,8 @@ type SimpleUpdateTemplate[RequestBody, ServiceRequest, ServiceReply any] struct 
 	// ParseServiceRequest the returned error is considered as user bad request and write 400 status code.
 	// If you want to write 500 status code, wrap the error by InternalError function.
 	ParseServiceRequest func(userID string, publicID string, r *RequestBody) (*ServiceRequest, error)
-	// ResourceNotFound returns true if the error is represented as resource not found error.
-	ResourceNotFound func(error) bool
+	// BadRequest checks if the error returned from Service is http bad request or not.
+	BadRequest func(err error) (httpCode int, yes bool)
 }
 
 func (t *SimpleUpdateTemplate[RequestBody, ServiceRequest, ServiceReply]) Update(c iris.Context) {
@@ -157,11 +169,11 @@ func (t *SimpleUpdateTemplate[RequestBody, ServiceRequest, ServiceReply]) Update
 	}
 
 	_, err = t.Service.Update(c.Request().Context(), sr)
-	if t.ResourceNotFound(err) {
-		c.StopWithText(iris.StatusNotFound, "no [%s] %s", publicID, t.Placeholder)
-		return
-	}
 	if err != nil {
+		if code, y := t.BadRequest(err); y {
+			c.StopWithPlainError(code, err)
+			return
+		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
@@ -177,8 +189,8 @@ type SimpleDeleteTemplate[ServiceRequest, ServiceReply any] struct {
 	}
 
 	ParseServiceRequest func(userID string, publicID string) *ServiceRequest
-	// ResourceNotFound returns true if the error is represented as resource not found error.
-	ResourceNotFound func(error) bool
+	// BadRequest checks if the error returned from Service is http bad request or not.
+	BadRequest func(err error) (httpCode int, yes bool)
 }
 
 func (t *SimpleDeleteTemplate[ServiceRequest, ServiceReply]) Delete(c iris.Context) {
@@ -199,11 +211,11 @@ func (t *SimpleDeleteTemplate[ServiceRequest, ServiceReply]) Delete(c iris.Conte
 	sr := t.ParseServiceRequest(userID, publicID)
 
 	_, err = t.Service.Delete(c.Request().Context(), sr)
-	if t.ResourceNotFound(err) {
-		c.StopWithText(iris.StatusNotFound, "no [%s] %s", publicID, t.Placeholder)
-		return
-	}
 	if err != nil {
+		if code, y := t.BadRequest(err); y {
+			c.StopWithPlainError(code, err)
+			return
+		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}

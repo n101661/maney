@@ -8,16 +8,21 @@ import (
 )
 
 var (
+	ErrDataInsufficient = fmt.Errorf("data insufficient")
 	ErrCategoryNotFound = fmt.Errorf("category not found")
 )
 
 type Service interface {
+	// Create returns ErrDataInsufficient if any of fields of CreateRequest is zero-value.
 	Create(context.Context, *CreateRequest) (*CreateReply, error)
+	// List returns ErrDataInsufficient if any of fields of ListRequest is zero-value,
 	List(context.Context, *ListRequest) (*ListReply, error)
 	// Update returns error:
+	//  - ErrDataInsufficient if any of fields of UpdateRequest is zero-value,
 	//  - ErrCategoryNotFound if the category does not exist.
 	Update(context.Context, *UpdateRequest) (*UpdateReply, error)
 	// Delete returns error:
+	//  - ErrDataInsufficient if any of fields of UpdateRequest is zero-value,
 	//  - ErrCategoryNotFound if the category does not exist.
 	Delete(context.Context, *DeleteRequest) (*DeleteReply, error)
 }

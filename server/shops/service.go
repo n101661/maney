@@ -6,16 +6,21 @@ import (
 )
 
 var (
-	ErrShopNotFound = fmt.Errorf("shop not found")
+	ErrDataInsufficient = fmt.Errorf("data insufficient")
+	ErrShopNotFound     = fmt.Errorf("shop not found")
 )
 
 type Service interface {
+	// Create returns ErrDataInsufficient if any of fields of CreateRequest is zero-value.
 	Create(context.Context, *CreateRequest) (*CreateReply, error)
+	// List returns ErrDataInsufficient if any of fields of ListRequest is zero-value,
 	List(context.Context, *ListRequest) (*ListReply, error)
 	// Update returns error:
+	//  - ErrDataInsufficient if any of fields of UpdateRequest is zero-value,
 	//  - ErrShopNotFound if the shop does not exist.
 	Update(context.Context, *UpdateRequest) (*UpdateReply, error)
 	// Delete returns error:
+	//  - ErrDataInsufficient if any of fields of DeleteRequest is zero-value,
 	//  - ErrShopNotFound if the shop does not exist.
 	Delete(context.Context, *DeleteRequest) (*DeleteReply, error)
 }

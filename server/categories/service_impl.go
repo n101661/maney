@@ -27,8 +27,11 @@ func NewService(
 }
 
 func (s *service) Create(ctx context.Context, r *CreateRequest) (*CreateReply, error) {
+	if r.UserID == "" {
+		return nil, fmt.Errorf("%w: missing user id", ErrDataInsufficient)
+	}
 	if r.Category == nil {
-		return nil, fmt.Errorf("nothing to create")
+		return nil, fmt.Errorf("%w: missing category", ErrDataInsufficient)
 	}
 
 	rows, err := s.repository.Create(ctx, &repository.CreateCategoriesRequest{
@@ -52,6 +55,10 @@ func (s *service) Create(ctx context.Context, r *CreateRequest) (*CreateReply, e
 }
 
 func (s *service) List(ctx context.Context, r *ListRequest) (*ListReply, error) {
+	if r.UserID == "" {
+		return nil, fmt.Errorf("%w: missing user id", ErrDataInsufficient)
+	}
+
 	reply, err := s.repository.List(ctx, &repository.ListCategoriesRequest{
 		UserID: r.UserID,
 		Type:   r.Type,
@@ -71,9 +78,16 @@ func (s *service) List(ctx context.Context, r *ListRequest) (*ListReply, error) 
 }
 
 func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, error) {
-	if r.Category == nil {
-		return nil, fmt.Errorf("nothing to update")
+	if r.UserID == "" {
+		return nil, fmt.Errorf("%w: missing user id", ErrDataInsufficient)
 	}
+	if r.CategoryPublicID == "" {
+		return nil, fmt.Errorf("%w: missing public id", ErrDataInsufficient)
+	}
+	if r.Category == nil {
+		return nil, fmt.Errorf("%w: missing category", ErrDataInsufficient)
+	}
+
 	row, err := s.repository.Update(ctx, &repository.UpdateCategoryRequest{
 		UserID:           r.UserID,
 		CategoryPublicID: r.CategoryPublicID,
@@ -91,6 +105,13 @@ func (s *service) Update(ctx context.Context, r *UpdateRequest) (*UpdateReply, e
 }
 
 func (s *service) Delete(ctx context.Context, r *DeleteRequest) (*DeleteReply, error) {
+	if r.UserID == "" {
+		return nil, fmt.Errorf("%w: missing user id", ErrDataInsufficient)
+	}
+	if r.CategoryPublicID == "" {
+		return nil, fmt.Errorf("%w: missing public id", ErrDataInsufficient)
+	}
+
 	_, err := s.repository.Delete(ctx, &repository.DeleteCategoriesRequest{
 		UserID:            r.UserID,
 		CategoryPublicIDs: []string{r.CategoryPublicID},
