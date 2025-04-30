@@ -53,7 +53,7 @@ func (t *SimpleCreateTemplate[RequestBody, ServiceRequest, ServiceReply, Respons
 	reply, err := t.Service.Create(c.Request().Context(), sr)
 	if err != nil {
 		if code, y := t.BadRequest(err); y {
-			c.StopWithPlainError(code, err)
+			c.StopWithText(code, err.Error())
 			return
 		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
@@ -107,7 +107,7 @@ func (t *SimpleListTemplate[ServiceRequest, ServiceReply, ResponseBody]) List(c 
 	reply, err := t.Service.List(c.Request().Context(), sr)
 	if err != nil {
 		if code, y := t.BadRequest(err); y {
-			c.StopWithPlainError(code, err)
+			c.StopWithText(code, err.Error())
 			return
 		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
@@ -171,7 +171,7 @@ func (t *SimpleUpdateTemplate[RequestBody, ServiceRequest, ServiceReply]) Update
 	_, err = t.Service.Update(c.Request().Context(), sr)
 	if err != nil {
 		if code, y := t.BadRequest(err); y {
-			c.StopWithPlainError(code, err)
+			c.StopWithText(code, err.Error())
 			return
 		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
@@ -213,7 +213,7 @@ func (t *SimpleDeleteTemplate[ServiceRequest, ServiceReply]) Delete(c iris.Conte
 	_, err = t.Service.Delete(c.Request().Context(), sr)
 	if err != nil {
 		if code, y := t.BadRequest(err); y {
-			c.StopWithPlainError(code, err)
+			c.StopWithText(code, err.Error())
 			return
 		}
 		c.StopWithPlainError(iris.StatusInternalServerError, iris.PrivateError(err))
