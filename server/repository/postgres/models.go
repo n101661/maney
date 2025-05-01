@@ -104,3 +104,37 @@ type ShopsModel struct {
 func (*ShopsModel) TableName() string {
 	return "shops"
 }
+
+type FeesModel struct {
+	ID       int32    `xorm:"serial pk"`
+	PublicID string   `xorm:"unique not null"`
+	UserID   string   `xorm:"index not null"`
+	Name     string   `xorm:"text not null"`
+	Data     *BaseFee `xorm:"json not null"`
+}
+
+func (*FeesModel) TableName() string {
+	return "fees"
+}
+
+type BaseFee struct {
+	Type  int8
+	Rate  *decimal.Decimal `json:"rate,omitempty"`
+	Fixed *decimal.Decimal `json:"fixed,omitempty"`
+}
+
+func (v *BaseFee) MarshalJSON() ([]byte, error) {
+	t := tempBaseFee(*v)
+	return json.Marshal(t)
+}
+
+func (v *BaseFee) UnmarshalJSON(data []byte) error {
+	var t tempBaseFee
+	if err := json.Unmarshal(data, &t); err != nil {
+		return err
+	}
+	*v = BaseFee(t)
+	return nil
+}
+
+type tempBaseFee BaseFee

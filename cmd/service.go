@@ -6,6 +6,7 @@ import (
 
 	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/categories"
+	"github.com/n101661/maney/server/fees"
 	"github.com/n101661/maney/server/shops"
 	"github.com/n101661/maney/server/users"
 )
@@ -15,6 +16,7 @@ type Services struct {
 	Account  accounts.Service
 	Category categories.Service
 	Shop     shops.Service
+	Fee      fees.Service
 }
 
 func newServices(repos *Repositories, authConfig *AuthServiceConfig) (*Services, error) {
@@ -45,10 +47,16 @@ func newServices(repos *Repositories, authConfig *AuthServiceConfig) (*Services,
 		return nil, fmt.Errorf("failed to initial the shop service: %v", err)
 	}
 
+	fee, err := fees.NewService(repos.Fee)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initial the fee service: %v", err)
+	}
+
 	return &Services{
 		User:     user,
 		Account:  account,
 		Category: category,
 		Shop:     shop,
+		Fee:      fee,
 	}, nil
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/categories"
+	"github.com/n101661/maney/server/fees"
 	"github.com/n101661/maney/server/models"
 	"github.com/n101661/maney/server/shops"
 	"github.com/n101661/maney/server/users"
@@ -157,6 +158,7 @@ func TestServer(t *testing.T) {
 		Account:  accounts.NewIrisController(accountService),
 		Category: categories.NewIrisController(categoryService),
 		Shop:     shops.NewIrisController(shopService),
+		Fee:      fees.NewIrisController(newFeeService(controller)),
 	}).app)
 
 	loginResponse := httpExpect.POST("/login").WithJSON(models.LoginRequest{
@@ -236,6 +238,24 @@ func TestServer(t *testing.T) {
 
 	withAuthorization(httpExpect.DELETE("/shops/PublicID")).
 		Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.POST("/fees")).WithJSON(models.CreateFeeJSONRequestBody{
+		Name:  "A",
+		Type:  0,
+		Value: lo.Must(newFeeValue()),
+	}).Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.GET("/fees")).
+		Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.PUT("/fees/PublicID")).WithJSON(models.UpdateFeeJSONRequestBody{
+		Name:  "A",
+		Type:  0,
+		Value: lo.Must(newFeeValue()),
+	}).Expect().Status(httptest.StatusOK)
+
+	withAuthorization(httpExpect.DELETE("/fees/PublicID")).
+		Expect().Status(httptest.StatusOK)
 }
 
 func newWithAuthorizationHandler(resp *httpexpect.Response) (func(*httpexpect.Request) *httpexpect.Request, error) {
@@ -249,4 +269,51 @@ func newWithAuthorizationHandler(resp *httpexpect.Response) (func(*httpexpect.Re
 	return func(r *httpexpect.Request) *httpexpect.Request {
 		return r.WithHeader(users.HeaderAuthorization, authorization)
 	}, nil
+}
+
+func newFeeService(controller *gomock.Controller) fees.Service {
+	feeService := fees.NewMockService(controller)
+	feeService.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&fees.CreateReply{
+		Fee: &fees.Fee{
+			ID:       0,
+			PublicID: "PublicID",
+			BaseFee: &fees.BaseFee{
+				Type: int8(models.FeeTypeRate),
+				Rate: lo.ToPtr(decimal.NewFromFloat(1)),
+			},
+		},
+	}, nil).AnyTimes()
+	feeService.EXPECT().List(gomock.Any(), gomock.Any()).Return(&fees.ListReply{
+		Fees: []*fees.Fee{{
+			ID:       0,
+			PublicID: "PublicID",
+			BaseFee: &fees.BaseFee{
+				Type: int8(models.FeeTypeRate),
+				Rate: lo.ToPtr(decimal.NewFromFloat(1)),
+			},
+		}},
+	}, nil).AnyTimes()
+	feeService.EXPECT().Update(gomock.Any(), gomock.Any()).Return(&fees.UpdateReply{
+		Fee: &fees.Fee{
+			ID:       0,
+			PublicID: "PublicID",
+			BaseFee: &fees.BaseFee{
+				Type: int8(models.FeeTypeRate),
+				Rate: lo.ToPtr(decimal.NewFromFloat(1)),
+			},
+		},
+	}, nil).AnyTimes()
+	feeService.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(&fees.DeleteReply{}, nil).AnyTimes()
+	return feeService
+}
+
+func newFeeValue() (models.BasicFee_Value, error) {
+	var v models.BasicFee_Value
+	err := v.FromBasicFeeValue0(models.BasicFeeValue0{
+		Rate: lo.ToPtr(models.Decimal("0.1")),
+	})
+	if err != nil {
+		return models.BasicFee_Value{}, err
+	}
+	return v, nil
 }

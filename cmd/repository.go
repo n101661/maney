@@ -11,6 +11,7 @@ import (
 
 	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/categories"
+	"github.com/n101661/maney/server/fees"
 	"github.com/n101661/maney/server/repository"
 	"github.com/n101661/maney/server/repository/postgres"
 	"github.com/n101661/maney/server/shops"
@@ -22,6 +23,7 @@ type Repositories struct {
 	Account  repository.AccountRepository
 	Category repository.CategoryRepository
 	Shop     repository.ShopRepository
+	Fee      repository.FeeRepository
 
 	closer io.Closer
 }
@@ -79,11 +81,17 @@ func newPostgresRepositories(config *postgres.Config) (*Repositories, error) {
 		return nil, fmt.Errorf("failed to initial shop repository: %v", err)
 	}
 
+	feeRepo, err := fees.NewPostgresRepository(engine)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initial fee repository: %v", err)
+	}
+
 	return &Repositories{
 		User:     userRepo,
 		Account:  accountRepo,
 		Category: categoryRepo,
 		Shop:     shopRepo,
+		Fee:      feeRepo,
 		closer:   engine,
 	}, nil
 }
@@ -117,6 +125,7 @@ func newXormEngine(driverName, dataSourceName string, opts *xormEngineOptions) (
 		postgres.AccountsModel{},
 		postgres.CategoriesModel{},
 		postgres.ShopsModel{},
+		postgres.FeesModel{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sync tables: %v", err)

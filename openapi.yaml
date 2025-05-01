@@ -512,6 +512,15 @@ components:
       properties:
         name:
           type: string
+        type:
+          description: The type of fee. 0 is rate fee; 1 is fixed fee.
+          type: integer
+          enum:
+            - 0
+            - 1
+          x-enum-varnames:
+            - Rate
+            - Fixed
         value:
           oneOf:
             - type: object
@@ -524,6 +533,7 @@ components:
                   $ref: "#/components/schemas/Decimal"
       required:
         - name
+        - type
         - value
     Fee:
       allOf:

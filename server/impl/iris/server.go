@@ -10,6 +10,7 @@ import (
 
 	"github.com/n101661/maney/server/accounts"
 	"github.com/n101661/maney/server/categories"
+	"github.com/n101661/maney/server/fees"
 	"github.com/n101661/maney/server/impl/iris/config"
 	"github.com/n101661/maney/server/middleware/errors"
 	"github.com/n101661/maney/server/middleware/logger"
@@ -28,6 +29,7 @@ type Controllers struct {
 	Account  *accounts.IrisController
 	Category *categories.IrisController
 	Shop     *shops.IrisController
+	Fee      *fees.IrisController
 }
 
 type Server struct {
